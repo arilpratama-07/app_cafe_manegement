@@ -6,8 +6,8 @@ const Order = require("./order")(sequelize, Sequelize);
 const OrderItem = require("./orderItem")(sequelize, Sequelize);
 const Table = require("./table")(sequelize, Sequelize);
 
-Order.hasMany(OrderItem, { foreignKey: "order_id" });
-OrderItem.belongsTo(Order);
+Order.hasMany (OrderItem, { foreignKey: "order_id" });
+OrderItem.belongsTo(Order, { foreignKey: "order_id" });
 
 OrderItem.belongsTo(Menu, { foreignKey: "menu_id" });
 
