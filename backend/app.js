@@ -1,24 +1,36 @@
-require("dotenv").config();
+require('dotenv').config(); // 1. Load env paling atas
+const express = require('express'); // 2. Panggil express
+const { Sequelize } = require('sequelize');
 
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
+const app = express(); // 3. Inisialisasi app (Penting!)
+const PORT = process.env.PORT || 5000;
 
-// Mengarah langsung ke file database di dalam folder config
-const sequelize = require("./config/database");
+// 4. Konfigurasi Sequelize
+const sequelize = new Sequelize(
+  process.env.DB_NAME, 
+  process.env.DB_USER, 
+  process.env.DB_PASSWORD, 
+  {
+    host: process.env.DB_HOST,
+    dialect: 'mysql'
+  }
+);
 
-const app = express();
+// 5. Cek Koneksi Database & Jalankan Server
+async function startServer() {
+  try {
+    await sequelize.authenticate();
+    console.log('Koneksi database berhasil!');
+    
+    // Sinkronisasi tabel (opsional, tapi berguna saat development)
+    await sequelize.sync(); 
 
-app.use(cors());
-app.use(bodyParser.json());
+    app.listen(PORT, () => {
+      console.log(`Server sedang berjalan di port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Tidak bisa terhubung ke database:', error);
+  }
+}
 
-// routes
-app.use("/menu", require("./routes/menuRoutes"));
-app.use("/orders", require("./routes/orderRoutes"));
-app.use("/tables", require("./routes/tableRoutes"));
-
-sequelize.sync().then(() => {
-  app.listen(process.env.PORT || 3000, () => {
-    console.log("Server running on port " + (process.env.PORT || 3000));
-  });
-});
+startServer();
