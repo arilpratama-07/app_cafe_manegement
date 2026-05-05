@@ -27,3 +27,4 @@ app.use((req, res, next) => {
 });
 
 app.use("/menu", require("./routes/menuRoutes"));
+

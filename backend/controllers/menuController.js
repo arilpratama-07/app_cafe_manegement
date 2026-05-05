@@ -1,5 +1,6 @@
 const { Menu } = require("../models");
 
+
 exports.getAll = async (req, res) => {
   res.json(await Menu.findAll());
 };
@@ -20,4 +21,12 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
   await Menu.destroy({ where: { id: req.params.id } });
   res.json({ message: "Deleted" });
+};
+
+exports.create = async (req, res) => {
+  const data = await Menu.create({
+    ...req.body,
+    price: req.body.price || 0
+  });
+  res.json(data);
 };
