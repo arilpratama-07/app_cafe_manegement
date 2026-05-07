@@ -1,0 +1,52 @@
+body {
+  background-color: #f4f6f9;
+  overflow-x: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- UI SIDEBAR --- */
+.sidebar {
+  min-width: 260px;
+  max-width: 260px;
+  min-height: 100vh;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+}
+
+.sidebar .nav-link {
+  color: #adb5bd;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  transform: translateX(5px);
+}
+
+.sidebar .nav-link.active {
+  background-color: #ffc107; 
+  color: #212529 !important; 
+  font-weight: 600;
+  box-shadow: 0 4px 6px rgba(255, 193, 7, 0.3);
+}
+
+/* --- TAMPILAN KONTEN --- */
+.view-section {
+  display: none;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.view-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
