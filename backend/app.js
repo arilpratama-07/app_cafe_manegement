@@ -1,27 +1,24 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); // Tambahkan cors jika belum ada
-const { sequelize } = require('./models'); // Sesuaikan dengan cara Anda import model
+const cors = require('cors');
+const path = require('path'); 
+const { sequelize } = require('./models'); 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- MIDDLEWARE (WAJIB DI SINI) ---
+// --- MIDDLEWARE ---
 app.use(cors());
-app.use(express.json()); // Ini yang paling penting agar bisa baca body POST
+app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
+
+// Membuka folder 'uploads' agar gambar bisa diakses oleh frontend
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- ROUTES ---
 app.use("/menu", require("./routes/menuRoutes"));
 app.use("/tables", require("./routes/tableRoutes"));
-
-// TAMBAHKAN BARIS INI:
 app.use("/orders", require("./routes/orderRoutes")); 
-
-// Rute tes tetap bisa dipertahankan
-app.post("/test-post", (req, res) => {
-  res.json({ message: "POST berhasil sampai ke app.js!", data: req.body });
-});
 
 // --- DATABASE & SERVER ---
 async function startServer() {
@@ -29,6 +26,7 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('Koneksi database berhasil!');
     
+    // Kembalikan ke sync() biasa agar tidak terjadi error 1067
     await sequelize.sync(); 
 
     app.listen(PORT, () => {
@@ -38,5 +36,6 @@ async function startServer() {
     console.error('Tidak bisa terhubung ke database:', error);
   }
 }
+
 
 startServer();

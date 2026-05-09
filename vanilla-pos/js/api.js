@@ -1,55 +1,67 @@
-const BASE_URL = 'http://localhost:5000'; // Port backend Anda
+const BASE_URL = 'http://localhost:5000';
 
-const api = {
-  async get(endpoint) {
+export default {
+  async get(url) {
     try {
-      const response = await fetch(`${BASE_URL}${endpoint}`);
-      if (!response.ok) throw new Error('Gagal mengambil data');
-      return await response.json();
-    } catch (error) {
-      console.error('Error GET:', error);
+      const res = await fetch(BASE_URL + url);
+      if (!res.ok) throw new Error('Gagal mengambil data');
+      return await res.json();
+    } catch (err) {
+      console.error('Error GET:', err);
     }
   },
-  
-  async post(endpoint, data) {
+
+  async post(url, data) {
     try {
-      const response = await fetch(`${BASE_URL}${endpoint}`, {
+      // Deteksi otomatis: Apakah ini Foto (FormData) atau Teks (JSON)?
+      const isFormData = data instanceof FormData;
+      
+      const options = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) throw new Error('Gagal menyimpan data');
-      return await response.json();
-    } catch (error) {
-      console.error('Error POST:', error);
+        body: isFormData ? data : JSON.stringify(data)
+      };
+
+      // Jika BUKAN foto, tambahkan header JSON
+      if (!isFormData) {
+        options.headers = { 'Content-Type': 'application/json' };
+      }
+
+      const res = await fetch(BASE_URL + url, options);
+      if (!res.ok) throw new Error('Gagal mengirim data');
+      return await res.json();
+    } catch (err) {
+      console.error('Error POST:', err);
     }
   },
 
-  async put(endpoint, data) {
+  async put(url, data) {
     try {
-      const response = await fetch(`${BASE_URL}${endpoint}`, {
+      const isFormData = data instanceof FormData;
+      
+      const options = {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) throw new Error('Gagal mengupdate data');
-      return await response.json();
-    } catch (error) {
-      console.error('Error PUT:', error);
+        body: isFormData ? data : JSON.stringify(data)
+      };
+
+      if (!isFormData) {
+        options.headers = { 'Content-Type': 'application/json' };
+      }
+
+      const res = await fetch(BASE_URL + url, options);
+      if (!res.ok) throw new Error('Gagal update data');
+      return await res.json();
+    } catch (err) {
+      console.error('Error PUT:', err);
     }
   },
 
-  async delete(endpoint) {
+  async delete(url) {
     try {
-      const response = await fetch(`${BASE_URL}${endpoint}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Gagal menghapus data');
-      return await response.json();
-    } catch (error) {
-      console.error('Error DELETE:', error);
+      const res = await fetch(BASE_URL + url, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Gagal menghapus data');
+      return await res.json();
+    } catch (err) {
+      console.error('Error DELETE:', err);
     }
   }
 };
-
-export default api;

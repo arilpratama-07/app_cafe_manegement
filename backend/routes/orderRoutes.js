@@ -1,24 +1,12 @@
-const router = require("express").Router();
-const ctrl = require("../controllers/orderControllers");
-// routes/orderRoutes.js
-router.get("/", async (req, res) => {
-  try {
-    const orders = await Order.findAll({
-      include: [
-        {
-          model: OrderItem,
-          include: ['Menu'] // Pastikan alias 'Menu' sesuai dengan definisi model kamu
-        }
-      ],
-      order: [['createdAt', 'DESC']] // Pesanan terbaru muncul paling atas
-    });
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+const express = require('express');
+const router = express.Router();
+const orderController = require('../controllers/orderController');
 
-router.get("/", ctrl.getAll);
-router.post("/", ctrl.create);
+router.get('/', orderController.getAll);
+router.post('/', orderController.create);
+router.delete('/:id', orderController.delete);
+
+// Rute penting untuk tombol "Selesai"
+router.patch('/:id/finish', orderController.finishOrder);
 
 module.exports = router;

@@ -1,41 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const { Menu } = require('../models'); // Pastikan path model benar
+const menuController = require('../controllers/menuController');
+const multer = require('multer');
+const path = require('path');
 
-// Ambil semua menu
-router.get("/", async (req, res) => {
-  const data = await Menu.findAll();
-  res.json(data);
-});
-
-// TAMBAH MENU (POST)
-router.post("/", async (req, res) => {
-  try {
-    const newMenu = await Menu.create(req.body);
-    res.status(201).json(newMenu);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+// Konfigurasi tempat simpan foto
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads/'); // Foto akan masuk ke folder uploads
+  },
+  filename: function (req, file, cb) {
+    // Menamai foto dengan angka unik agar tidak bentrok
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
-// EDIT MENU (PUT)
-router.put("/:id", async (req, res) => {
-  try {
-    await Menu.update(req.body, { where: { id: req.params.id } });
-    res.json({ message: "Menu berhasil diperbarui" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+const upload = multer({ storage: storage });
 
-// HAPUS MENU (DELETE)
-router.delete("/:id", async (req, res) => {
-  try {
-    await Menu.destroy({ where: { id: req.params.id } });
-    res.json({ message: "Menu berhasil dihapus" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Rute API
+router.get('/', menuController.getAll);
+router.post('/', upload.single('image'), menuController.create);
+router.put('/:id', upload.single('image'), menuController.update);
+router.delete('/:id', menuController.delete);
 
 module.exports = router;
