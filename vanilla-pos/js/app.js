@@ -11,16 +11,42 @@ function handleRouting() {
   const targetId = hash.replace('#', '');
   document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+  
   const targetSection = document.getElementById(targetId);
   if (targetSection) targetSection.classList.add('active');
   document.getElementById(`nav-${targetId}`)?.classList.add('active');
 
+  if (targetId === 'dashboard') updateDashboardStats();
   if (targetId === 'menu') fetchMenus();
   if (targetId === 'tables') fetchTables();
   if (targetId === 'orders') fetchOrders();
 }
 window.addEventListener('hashchange', handleRouting);
 window.addEventListener('DOMContentLoaded', handleRouting);
+
+// === FUNGSI UPDATE STATISTIK DASHBOARD ===
+async function updateDashboardStats() {
+  try {
+    const [menuData, tableData, orderData] = await Promise.all([
+      api.get('/menu'),
+      api.get('/tables'),
+      api.get('/orders')
+    ]);
+
+    if(document.getElementById('total-menu')) 
+      document.getElementById('total-menu').innerText = menuData ? menuData.length : 0;
+    
+    if(document.getElementById('total-tables')) 
+      document.getElementById('total-tables').innerText = tableData ? tableData.length : 0;
+    
+    if(document.getElementById('active-orders')) {
+      const activeCount = orderData ? orderData.filter(o => o.status === 'pending').length : 0;
+      document.getElementById('active-orders').innerText = activeCount;
+    }
+  } catch (error) {
+    console.error("Gagal update dashboard:", error);
+  }
+}
 
 // === 2. MANAJEMEN KATALOG MENU ===
 async function fetchMenus() {
@@ -39,7 +65,7 @@ function renderMenuCards() {
   menus.forEach(item => {
     let imgSrc = item.image ? `http://localhost:5000${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
     grid.innerHTML += `
-      <div class="col-6 col-md-4 col-lg-3">
+      <div class="col">
         <div class="card menu-card shadow-sm h-100 border-0 rounded-4">
           <div class="img-container position-relative d-flex flex-column align-items-center justify-content-center" style="height: 160px; background-color: #e9ecef;">
             <img src="${imgSrc}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -66,7 +92,9 @@ function renderMenuCards() {
 function updateCartCount() {
   const count = cart.reduce((acc, curr) => acc + curr.quantity, 0);
   const badge = document.getElementById('cart-count');
+  const badgeMobile = document.getElementById('cart-count-mobile');
   if (badge) badge.innerText = count;
+  if (badgeMobile) badgeMobile.innerText = count;
 }
 
 document.getElementById('btnOpenCart')?.addEventListener('click', () => {
@@ -74,6 +102,7 @@ document.getElementById('btnOpenCart')?.addEventListener('click', () => {
   const tableSelect = document.getElementById('cartTableId');
   let total = 0;
   list.innerHTML = cart.length === 0 ? '<p class="text-center text-muted">Keranjang kosong</p>' : '';
+  
   cart.forEach((item, index) => {
     const subtotal = item.price * item.quantity;
     total += subtotal;
@@ -89,18 +118,23 @@ document.getElementById('btnOpenCart')?.addEventListener('click', () => {
         </div>
       </div>`;
   });
+
   api.get('/tables').then(data => {
     tableSelect.innerHTML = '<option value="" disabled selected>Pilih Meja...</option>';
-    if(data) data.filter(t => t.status === 'kosong').forEach(t => {
-      tableSelect.innerHTML += `<option value="${t.id}">Meja ${t.table_number}</option>`;
-    });
+    if(data) {
+      data.filter(t => t.status === 'kosong').forEach(t => {
+        tableSelect.innerHTML += `<option value="${t.id}">Meja ${t.table_number}</option>`;
+      });
+    }
   });
+
   document.getElementById('cartTotalLabel').innerText = `Rp ${total.toLocaleString('id-ID')}`;
   new bootstrap.Modal(document.getElementById('cartModal')).show();
 });
 
 // === 4. EVENT LISTENER GLOBAL ===
 document.addEventListener('click', async (e) => {
+  // Keranjang
   const btnAdd = e.target.closest('.btn-add-cart');
   if (btnAdd) {
     const id = parseInt(btnAdd.getAttribute('data-id'));
@@ -112,6 +146,7 @@ document.addEventListener('click', async (e) => {
   }
   const btnPlus = e.target.closest('.btn-plus-qty');
   if (btnPlus) { cart[btnPlus.getAttribute('data-index')].quantity++; updateCartCount(); document.getElementById('btnOpenCart').click(); }
+  
   const btnMinus = e.target.closest('.btn-minus-qty');
   if (btnMinus) {
     const idx = btnMinus.getAttribute('data-index');
@@ -119,9 +154,11 @@ document.addEventListener('click', async (e) => {
     else cart.splice(idx, 1);
     updateCartCount(); document.getElementById('btnOpenCart').click();
   }
+  
   const btnRemCart = e.target.closest('.btn-remove-cart');
   if (btnRemCart) { cart.splice(btnRemCart.getAttribute('data-index'), 1); updateCartCount(); document.getElementById('btnOpenCart').click(); }
 
+  // Admin Menu & Meja
   const btnEdit = e.target.closest('.btn-edit-menu');
   if (btnEdit) {
     const menu = menus.find(m => m.id === parseInt(btnEdit.getAttribute('data-id')));
@@ -130,6 +167,7 @@ document.addEventListener('click', async (e) => {
     document.getElementById('editMenuPrice').value = menu.price;
     new bootstrap.Modal(document.getElementById('editMenuModal')).show();
   }
+  
   const btnDelMenu = e.target.closest('.btn-delete-menu');
   if (btnDelMenu) { if(confirm('Hapus menu?')) await api.delete(`/menu/${btnDelMenu.getAttribute('data-id')}`).then(fetchMenus); }
 
@@ -137,16 +175,15 @@ document.addEventListener('click', async (e) => {
     if(confirm('Hapus meja?')) await api.delete(`/tables/${e.target.getAttribute('data-id')}`).then(fetchTables);
   }
 
-  // --- LOGIKA PESANAN SELESAI (SUDAH DIPERBAIKI) ---
+  // Selesaikan Pesanan
   const btnFinish = e.target.closest('.btn-finish-order');
   if (btnFinish) {
     if(confirm('Selesaikan pesanan & kosongkan meja?')) {
       const res = await fetch(`http://localhost:5000/orders/${btnFinish.getAttribute('data-id')}/finish`, { method: 'PATCH' });
       if (res.ok) {
-        // Refresh kedua data agar UI Sinkron
         fetchOrders(); 
         fetchTables(); 
-        alert('Pesanan selesai, meja otomatis kosong!');
+        updateDashboardStats();
       }
     }
   }
@@ -157,26 +194,72 @@ document.addEventListener('click', async (e) => {
       await api.delete(`/orders/${btnDelOrder.getAttribute('data-id')}`);
       fetchOrders();
       fetchTables();
+      updateDashboardStats();
     }
   }
 });
 
-// === 5. FORM SUBMIT ===
+// === 5. FORM SUBMIT (PERBAIKAN TOMBOL PESANAN) ===
 document.getElementById('btnSubmitOrder')?.addEventListener('click', async () => {
-  const table_id = document.getElementById('cartTableId').value;
-  if (!table_id || cart.length === 0) return alert('Pilih meja!');
-  await api.post('/orders', {
-    table_id: parseInt(table_id),
-    total_price: cart.reduce((acc, i) => acc + (i.price * i.quantity), 0),
-    items: cart.map(c => ({ menu_id: c.menu_id, quantity: c.quantity, price: c.price }))
-  });
-  cart = []; updateCartCount();
-  bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
-  fetchOrders();
-  fetchTables(); // Refresh meja agar merah (terisi)
-  alert('Pesanan dikirim!');
+  const btn = document.getElementById('btnSubmitOrder');
+  
+  try {
+    const table_id = document.getElementById('cartTableId').value;
+    
+    // Validasi
+    if (!table_id) return alert('Pilih meja pelanggan terlebih dahulu!');
+    if (cart.length === 0) return alert('Keranjang masih kosong!');
+
+    // Ubah tombol jadi loading
+    btn.innerText = 'Memproses...';
+    btn.disabled = true;
+
+    // Payload Data
+    const payload = {
+      table_id: parseInt(table_id),
+      total_price: cart.reduce((acc, i) => acc + (i.price * i.quantity), 0),
+      items: cart.map(c => ({ menu_id: c.menu_id, quantity: c.quantity, price: c.price }))
+    };
+
+    // Kirim ke backend
+    await api.post('/orders', payload);
+    
+    // Kosongkan keranjang
+    cart = []; 
+    updateCartCount();
+    
+    // TUTUP MODAL DENGAN AMAN (Mencegah Layar Nge-freeze)
+    const modalEl = document.getElementById('cartModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if(modalInstance) modalInstance.hide();
+    
+    // Hapus background hitam jika nyangkut
+    document.querySelector('.modal-backdrop')?.remove();
+    document.body.classList.remove('modal-open');
+    document.body.style = '';
+
+    // Update tampilan data
+    fetchOrders();
+    fetchTables();
+    updateDashboardStats();
+    
+    // Pindah ke halaman pesanan otomatis
+    window.location.hash = '#orders';
+    
+    // Kembalikan tombol
+    btn.innerText = 'Proses Pesanan';
+    btn.disabled = false;
+    alert('Pesanan berhasil dikirim ke Admin!');
+
+  } catch (error) {
+    console.error("Gagal pesanan:", error);
+    alert('Gagal mengirim pesanan. Pastikan Backend menyala!');
+    btn.innerText = 'Proses Pesanan';
+    btn.disabled = false;
+  }
 });
 
+// Tambah/Edit Menu & Meja
 document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData();
@@ -186,14 +269,27 @@ document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => 
   if (document.getElementById('menuImage').files[0]) formData.append('image', document.getElementById('menuImage').files[0]);
   await api.post('/menu', formData);
   fetchMenus(); e.target.reset();
-  bootstrap.Modal.getInstance(document.getElementById('addMenuModal')).hide();
+  bootstrap.Modal.getInstance(document.getElementById('addMenuModal'))?.hide();
+});
+
+document.getElementById('editMenuForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('editMenuId').value;
+  const formData = new FormData();
+  formData.append('name', document.getElementById('editMenuName').value);
+  formData.append('category', document.getElementById('editMenuCategory').value);
+  formData.append('price', document.getElementById('editMenuPrice').value);
+  if (document.getElementById('editMenuImage').files[0]) formData.append('image', document.getElementById('editMenuImage').files[0]);
+  await api.put(`/menu/${id}`, formData);
+  fetchMenus();
+  bootstrap.Modal.getInstance(document.getElementById('editMenuModal'))?.hide();
 });
 
 document.getElementById('addTableForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   await api.post('/tables', { table_number: document.getElementById('tableNumber').value });
   fetchTables(); e.target.reset();
-  bootstrap.Modal.getInstance(document.getElementById('addTableModal')).hide();
+  bootstrap.Modal.getInstance(document.getElementById('addTableModal'))?.hide();
 });
 
 // === 6. FETCH DATA ADMIN ===
@@ -204,29 +300,45 @@ async function fetchTables() {
     if (!container) return;
     container.innerHTML = '';
     data.forEach(t => {
-      container.innerHTML += `<div class="col-md-3 col-sm-6"><div class="card shadow-sm border-0 rounded-4 text-center p-4"><h1>${t.table_number}</h1><span class="badge ${t.status === 'kosong' ? 'bg-success' : 'bg-danger'} mb-3">${t.status}</span><button class="btn btn-sm btn-outline-danger btn-delete-table" data-id="${t.id}">Hapus</button></div></div>`;
+      container.innerHTML += `
+        <div class="col">
+          <div class="card shadow-sm border-0 rounded-4 text-center p-4 h-100">
+            <h1>${t.table_number}</h1>
+            <span class="badge ${t.status === 'kosong' ? 'bg-success' : 'bg-danger'} mb-3">${t.status}</span>
+            <button class="btn btn-sm btn-outline-danger btn-delete-table mt-auto" data-id="${t.id}">Hapus Meja</button>
+          </div>
+        </div>`;
     });
   }
 }
 
 async function fetchOrders() {
-  const data = await api.get('/orders');
-  if (data) {
+  try {
+    const data = await api.get('/orders');
     const tbody = document.getElementById('orders-table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada pesanan masuk</td></tr>';
+      return;
+    }
+
     data.forEach(o => {
+      const nomorMeja = o.Table ? o.Table.table_number : '??';
       tbody.innerHTML += `
         <tr>
           <td class="ps-4 fw-bold">#ORD-${o.id}</td>
-          <td>Meja ${o.Table ? o.Table.table_number : '-'}</td>
-          <td>Rp ${o.total_price.toLocaleString('id-ID')}</td>
-          <td><span class="badge ${o.status === 'pending' ? 'bg-warning text-dark' : 'bg-success'}">${o.status}</span></td>
+          <td><span class="fw-bold">Meja ${nomorMeja}</span></td>
+          <td class="text-success fw-bold">Rp ${Number(o.total_price).toLocaleString('id-ID')}</td>
+          <td><span class="badge ${o.status === 'pending' ? 'bg-warning text-dark' : 'bg-success'} px-2 py-1">${o.status}</span></td>
           <td class="text-center">
-            ${o.status === 'pending' ? `<button class="btn btn-sm btn-success btn-finish-order me-1" data-id="${o.id}">Selesai</button>` : ''}
+            ${o.status === 'pending' ? `<button class="btn btn-sm btn-success btn-finish-order me-1" data-id="${o.id}"><i class="bi bi-check-lg"></i> Selesai</button>` : ''}
             <button class="btn btn-sm btn-outline-danger btn-delete-order" data-id="${o.id}"><i class="bi bi-trash"></i></button>
           </td>
         </tr>`;
     });
+  } catch (err) {
+    console.error("Gagal memuat pesanan:", err);
   }
 }

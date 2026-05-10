@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
 
+// Rute untuk mengambil semua pesanan (Ini yang bikin 404 kalau tidak ada)
 router.get('/', orderController.getAll);
+
 router.post('/', orderController.create);
 router.delete('/:id', orderController.delete);
-
-// Rute penting untuk tombol "Selesai"
 router.patch('/:id/finish', orderController.finishOrder);
 
 module.exports = router;
