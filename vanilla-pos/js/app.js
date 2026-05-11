@@ -1,78 +1,89 @@
 import api from './api.js';
 
-let menus = [];
-let tables = [];
-let orders = [];
-let cart = []; 
+// --- VARIABEL GLOBAL (PENAMPUNG DATA) ---
+let daftarMenu = [];      // Menyimpan daftar menu dari server
+let daftarMeja = [];      // Menyimpan daftar meja dari server
+let daftarPesanan = [];   // Menyimpan riwayat pesanan dari server
+let keranjang = [];       // Menyimpan item yang dipilih pelanggan untuk dipesan
 
 // === 1. ROUTING & NAVIGASI ===
-function handleRouting() {
-  const hash = window.location.hash || '#dashboard';
-  const targetId = hash.replace('#', '');
-  document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+function aturNavigasi() {
+  const hashURL = window.location.hash || '#dashboard';
+  const idTarget = hashURL.replace('#', '');
+
+  // Sembunyikan semua bagian section dan hapus status active pada menu navigasi
+  document.querySelectorAll('.view-section').forEach(bagian => bagian.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(tautan => tautan.classList.remove('active'));
   
-  const targetSection = document.getElementById(targetId);
-  if (targetSection) targetSection.classList.add('active');
-  document.getElementById(`nav-${targetId}`)?.classList.add('active');
+  // Tampilkan bagian yang dipilih dan tandai menu navigasi sebagai active
+  const bagianTarget = document.getElementById(idTarget);
+  if (bagianTarget) bagianTarget.classList.add('active');
+  document.getElementById(`nav-${idTarget}`)?.classList.add('active');
 
-  if (targetId === 'dashboard') updateDashboardStats();
-  if (targetId === 'menu') fetchMenus();
-  if (targetId === 'tables') fetchTables();
-  if (targetId === 'orders') fetchOrders();
+  // Eksekusi fungsi pengambilan data sesuai halaman yang sedang dibuka
+  if (idTarget === 'dashboard') perbaruiStatistikDashboard();
+  if (idTarget === 'menu') ambilDataMenu();
+  if (idTarget === 'tables') ambilDataMeja();
+  if (idTarget === 'orders') ambilDataPesanan();
 }
-window.addEventListener('hashchange', handleRouting);
-window.addEventListener('DOMContentLoaded', handleRouting);
 
-// === FUNGSI UPDATE STATISTIK DASHBOARD ===
-async function updateDashboardStats() {
+window.addEventListener('hashchange', aturNavigasi);
+window.addEventListener('DOMContentLoaded', aturNavigasi);
+
+// === 2. FUNGSI UPDATE STATISTIK DASHBOARD ===
+async function perbaruiStatistikDashboard() {
   try {
-    const [menuData, tableData, orderData] = await Promise.all([
+    const [dataMenu, dataMeja, dataPesanan] = await Promise.all([
       api.get('/menu'),
       api.get('/tables'),
       api.get('/orders')
     ]);
 
     if(document.getElementById('total-menu')) 
-      document.getElementById('total-menu').innerText = menuData ? menuData.length : 0;
+      document.getElementById('total-menu').innerText = dataMenu ? dataMenu.length : 0;
     
     if(document.getElementById('total-tables')) 
-      document.getElementById('total-tables').innerText = tableData ? tableData.length : 0;
+      document.getElementById('total-tables').innerText = dataMeja ? dataMeja.length : 0;
     
     if(document.getElementById('active-orders')) {
-      const activeCount = orderData ? orderData.filter(o => o.status === 'pending').length : 0;
-      document.getElementById('active-orders').innerText = activeCount;
+      const jumlahAktif = dataPesanan ? dataPesanan.filter(p => p.status === 'pending').length : 0;
+      document.getElementById('active-orders').innerText = jumlahAktif;
     }
-  } catch (error) {
-    console.error("Gagal update dashboard:", error);
+  } catch (err) {
+    console.error("Gagal update dashboard:", err);
   }
 }
 
-// === 2. MANAJEMEN KATALOG MENU ===
-async function fetchMenus() {
+// === 3. MANAJEMEN KATALOG MENU ===
+async function ambilDataMenu() { 
   const data = await api.get('/menu');
-  if (data) { menus = data; renderMenuCards(); }
+  if (data) { 
+    daftarMenu = data; 
+    tampilkanKartuMenu(); 
+  }
 }
 
-function renderMenuCards() {
-  const grid = document.getElementById('menu-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  if (menus.length === 0) {
-    grid.innerHTML = `<div class="col-12 text-center py-5 text-muted">Belum ada menu.</div>`;
+function tampilkanKartuMenu() {
+  const kisiMenu = document.getElementById('menu-grid');
+  if (!kisiMenu) return;
+  kisiMenu.innerHTML = '';
+
+  if (daftarMenu.length === 0) {
+    kisiMenu.innerHTML = `<div class="col-12 text-center py-5 text-muted">Belum ada menu.</div>`;
     return;
   }
-  menus.forEach(item => {
-    let imgSrc = item.image ? `http://localhost:5000${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
-    grid.innerHTML += `
-      <div class="col">
+  
+  daftarMenu.forEach(item => {
+    let sumberGambar = item.image ? `http://localhost:5000${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
+    kisiMenu.innerHTML += `
+      <div class="col-6 col-md-4 col-lg-3">
         <div class="card menu-card shadow-sm h-100 border-0 rounded-4">
           <div class="img-container position-relative d-flex flex-column align-items-center justify-content-center" style="height: 160px; background-color: #e9ecef;">
-            <img src="${imgSrc}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <div style="display:none; color:#6c757d; text-align:center;"><i class="bi bi-image fs-2"></i></div>
+            <img src="${sumberGambar}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div style="display:none; color:#6c757d;"><i class="bi bi-image fs-2"></i></div> 
             <div class="position-absolute top-0 end-0 p-2">
-              <button class="btn btn-light btn-sm rounded-circle shadow-sm me-1 btn-edit-menu" data-id="${item.id}"><i class="bi bi-pencil-fill text-primary pointer-events-none"></i></button>
-              <button class="btn btn-light btn-sm rounded-circle shadow-sm btn-delete-menu" data-id="${item.id}"><i class="bi bi-trash-fill text-danger pointer-events-none"></i></button>
+              <button class="btn btn-light btn-sm rounded-circle shadow-sm me-1 btn-edit-menu" data-id="${item.id}"><i class="bi bi-pencil-fill text-primary"></i></button>
+              <button class="btn btn-light btn-sm rounded-circle shadow-sm btn-delete-menu" data-id="${item.id}"><i class="bi bi-trash-fill text-danger"></i></button>
             </div>
           </div>
           <div class="card-body p-3 d-flex flex-column">
@@ -80,7 +91,7 @@ function renderMenuCards() {
             <p class="text-muted small mb-2">${item.category}</p>
             <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
               <span class="fw-bold text-success small">Rp ${Number(item.price).toLocaleString('id-ID')}</span>
-              <button class="btn btn-warning btn-sm rounded-circle btn-add-cart" data-id="${item.id}"><i class="bi bi-plus-lg pointer-events-none"></i></button>
+              <button class="btn btn-warning btn-sm rounded-circle btn-add-cart" data-id="${item.id}"><i class="bi bi-plus-lg"></i></button>
             </div>
           </div>
         </div>
@@ -88,257 +99,234 @@ function renderMenuCards() {
   });
 }
 
-// === 3. LOGIKA KERANJANG BELANJA ===
-function updateCartCount() {
-  const count = cart.reduce((acc, curr) => acc + curr.quantity, 0);
+// === 4. LOGIKA KERANJANG BELANJA ===
+function perbaruiJumlahKeranjang() {
+  const total = keranjang.reduce((acc, curr) => acc + curr.quantity, 0);
   const badge = document.getElementById('cart-count');
   const badgeMobile = document.getElementById('cart-count-mobile');
-  if (badge) badge.innerText = count;
-  if (badgeMobile) badgeMobile.innerText = count;
+  if (badge) badge.innerText = total;
+  if (badgeMobile) badgeMobile.innerText = total;
 }
 
 document.getElementById('btnOpenCart')?.addEventListener('click', () => {
   const list = document.getElementById('cart-items-list');
   const tableSelect = document.getElementById('cartTableId');
-  let total = 0;
-  list.innerHTML = cart.length === 0 ? '<p class="text-center text-muted">Keranjang kosong</p>' : '';
+  let totalHarga = 0;
   
-  cart.forEach((item, index) => {
+  list.innerHTML = keranjang.length === 0 ? '<p class="text-center text-muted">Keranjang kosong</p>' : '';
+  
+  keranjang.forEach((item, idx) => {
     const subtotal = item.price * item.quantity;
-    total += subtotal;
+    totalHarga += subtotal;
     list.innerHTML += `
       <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
         <div><div class="fw-bold text-truncate" style="max-width:150px;">${item.name}</div><small class="text-muted">Rp ${item.price.toLocaleString('id-ID')}</small></div>
         <div class="d-flex align-items-center">
-          <button class="btn btn-sm btn-outline-dark px-2 py-0 btn-minus-qty" data-index="${index}">-</button>
+          <button class="btn btn-sm btn-outline-dark px-2 py-0 btn-minus-qty" data-index="${idx}">-</button>
           <span class="mx-2 fw-bold">${item.quantity}</span>
-          <button class="btn btn-sm btn-outline-dark px-2 py-0 btn-plus-qty" data-index="${index}">+</button>
+          <button class="btn btn-sm btn-outline-dark px-2 py-0 btn-plus-qty" data-index="${idx}">+</button>
           <div class="ms-3 fw-bold text-end" style="min-width: 80px;">Rp ${subtotal.toLocaleString('id-ID')}</div>
-          <button class="btn btn-sm text-danger ms-2 btn-remove-cart" data-index="${index}"><i class="bi bi-trash pointer-events-none"></i></button>
+          <button class="btn btn-sm text-danger ms-2 btn-remove-cart" data-index="${idx}"><i class="bi bi-trash"></i></button>
         </div>
       </div>`;
   });
-
+  
   api.get('/tables').then(data => {
     tableSelect.innerHTML = '<option value="" disabled selected>Pilih Meja...</option>';
-    if(data) {
-      data.filter(t => t.status === 'kosong').forEach(t => {
-        tableSelect.innerHTML += `<option value="${t.id}">Meja ${t.table_number}</option>`;
-      });
-    }
+    if(data) data.filter(m => m.status === 'kosong').forEach(m => {
+      tableSelect.innerHTML += `<option value="${m.id}">Meja ${m.table_number}</option>`;
+    });
   });
-
-  document.getElementById('cartTotalLabel').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+  
+  document.getElementById('cartTotalLabel').innerText = `Rp ${totalHarga.toLocaleString('id-ID')}`;
   new bootstrap.Modal(document.getElementById('cartModal')).show();
 });
 
-// === 4. EVENT LISTENER GLOBAL ===
+// === 5. EVENT LISTENER GLOBAL ===
 document.addEventListener('click', async (e) => {
-  // Keranjang
-  const btnAdd = e.target.closest('.btn-add-cart');
-  if (btnAdd) {
-    const id = parseInt(btnAdd.getAttribute('data-id'));
-    const item = menus.find(m => m.id === id);
-    const existing = cart.find(c => c.menu_id === id);
-    if (existing) existing.quantity++;
-    else cart.push({ menu_id: id, name: item.name, price: item.price, quantity: 1 });
-    updateCartCount();
-  }
-  const btnPlus = e.target.closest('.btn-plus-qty');
-  if (btnPlus) { cart[btnPlus.getAttribute('data-index')].quantity++; updateCartCount(); document.getElementById('btnOpenCart').click(); }
-  
-  const btnMinus = e.target.closest('.btn-minus-qty');
-  if (btnMinus) {
-    const idx = btnMinus.getAttribute('data-index');
-    if (cart[idx].quantity > 1) cart[idx].quantity--;
-    else cart.splice(idx, 1);
-    updateCartCount(); document.getElementById('btnOpenCart').click();
-  }
-  
-  const btnRemCart = e.target.closest('.btn-remove-cart');
-  if (btnRemCart) { cart.splice(btnRemCart.getAttribute('data-index'), 1); updateCartCount(); document.getElementById('btnOpenCart').click(); }
+  const target = e.target;
 
-  // Admin Menu & Meja
-  const btnEdit = e.target.closest('.btn-edit-menu');
-  if (btnEdit) {
-    const menu = menus.find(m => m.id === parseInt(btnEdit.getAttribute('data-id')));
+  // Add to Cart
+  if (target.closest('.btn-add-cart')) {
+    const id = parseInt(target.closest('.btn-add-cart').dataset.id);
+    const item = daftarMenu.find(m => m.id === id);
+    const ada = keranjang.find(k => k.menu_id === id);
+    if (ada) ada.quantity++;
+    else keranjang.push({ menu_id: id, name: item.name, price: item.price, quantity: 1 });
+    perbaruiJumlahKeranjang();
+  }
+
+  // Qty Control
+  if (target.closest('.btn-plus-qty')) {
+    keranjang[target.closest('.btn-plus-qty').dataset.index].quantity++;
+    perbaruiJumlahKeranjang(); document.getElementById('btnOpenCart').click();
+  }
+  if (target.closest('.btn-minus-qty')) {
+    const idx = target.closest('.btn-minus-qty').dataset.index;
+    if (keranjang[idx].quantity > 1) keranjang[idx].quantity--;
+    else keranjang.splice(idx, 1);
+    perbaruiJumlahKeranjang(); document.getElementById('btnOpenCart').click();
+  }
+  if (target.closest('.btn-remove-cart')) {
+    keranjang.splice(target.closest('.btn-remove-cart').dataset.index, 1);
+    perbaruiJumlahKeranjang(); document.getElementById('btnOpenCart').click();
+  }
+
+  // Edit Menu (Fill Data)
+  if (target.closest('.btn-edit-menu')) {
+    const id = parseInt(target.closest('.btn-edit-menu').dataset.id);
+    const menu = daftarMenu.find(m => m.id === id);
     document.getElementById('editMenuId').value = menu.id;
     document.getElementById('editMenuName').value = menu.name;
     document.getElementById('editMenuPrice').value = menu.price;
     new bootstrap.Modal(document.getElementById('editMenuModal')).show();
   }
-  
-  const btnDelMenu = e.target.closest('.btn-delete-menu');
-  if (btnDelMenu) { if(confirm('Hapus menu?')) await api.delete(`/menu/${btnDelMenu.getAttribute('data-id')}`).then(fetchMenus); }
 
-  if (e.target.classList.contains('btn-delete-table')) {
-    if(confirm('Hapus meja?')) await api.delete(`/tables/${e.target.getAttribute('data-id')}`).then(fetchTables);
+  // Delete Menu
+  if (target.closest('.btn-delete-menu')) {
+    if(confirm('Hapus menu ini?')) await api.delete(`/menu/${target.closest('.btn-delete-menu').dataset.id}`).then(ambilDataMenu);
   }
 
-  // Selesaikan Pesanan
-  const btnFinish = e.target.closest('.btn-finish-order');
-  if (btnFinish) {
-    if(confirm('Selesaikan pesanan & kosongkan meja?')) {
-      const res = await fetch(`http://localhost:5000/orders/${btnFinish.getAttribute('data-id')}/finish`, { method: 'PATCH' });
-      if (res.ok) {
-        fetchOrders(); 
-        fetchTables(); 
-        updateDashboardStats();
-      }
+  // Finish Order (Logic: Meja tetap terisi)
+  if (target.closest('.btn-finish-order')) {
+    if(confirm('Selesaikan pesanan? (Meja tetap terisi hingga reset harian)')) {
+      const id = target.closest('.btn-finish-order').dataset.id;
+      const res = await fetch(`http://localhost:5000/orders/${id}/finish`, { method: 'PATCH' });
+      if (res.ok) { ambilDataPesanan(); ambilDataMeja(); alert('Pesanan diselesaikan!'); }
     }
   }
 
-  const btnDelOrder = e.target.closest('.btn-delete-order');
-  if (btnDelOrder) {
-    if(confirm('Hapus riwayat pesanan?')) {
-      await api.delete(`/orders/${btnDelOrder.getAttribute('data-id')}`);
-      fetchOrders();
-      fetchTables();
-      updateDashboardStats();
-    }
+  // Delete Order
+  if (target.closest('.btn-delete-order')) {
+    if(confirm('Hapus riwayat pesanan?')) await api.delete(`/orders/${target.closest('.btn-delete-order').dataset.id}`).then(ambilDataPesanan);
   }
 });
 
-// === 5. FORM SUBMIT (PERBAIKAN TOMBOL PESANAN) ===
+// === 6. FORM SUBMIT ===
+
+// Create Order
 document.getElementById('btnSubmitOrder')?.addEventListener('click', async () => {
-  const btn = document.getElementById('btnSubmitOrder');
+  const tableId = document.getElementById('cartTableId').value;
+  if (!tableId || keranjang.length === 0) return alert('Pilih meja dan menu!');
   
-  try {
-    const table_id = document.getElementById('cartTableId').value;
-    
-    // Validasi
-    if (!table_id) return alert('Pilih meja pelanggan terlebih dahulu!');
-    if (cart.length === 0) return alert('Keranjang masih kosong!');
-
-    // Ubah tombol jadi loading
-    btn.innerText = 'Memproses...';
-    btn.disabled = true;
-
-    // Payload Data
-    const payload = {
-      table_id: parseInt(table_id),
-      total_price: cart.reduce((acc, i) => acc + (i.price * i.quantity), 0),
-      items: cart.map(c => ({ menu_id: c.menu_id, quantity: c.quantity, price: c.price }))
-    };
-
-    // Kirim ke backend
-    await api.post('/orders', payload);
-    
-    // Kosongkan keranjang
-    cart = []; 
-    updateCartCount();
-    
-    // TUTUP MODAL DENGAN AMAN (Mencegah Layar Nge-freeze)
-    const modalEl = document.getElementById('cartModal');
-    const modalInstance = bootstrap.Modal.getInstance(modalEl);
-    if(modalInstance) modalInstance.hide();
-    
-    // Hapus background hitam jika nyangkut
-    document.querySelector('.modal-backdrop')?.remove();
-    document.body.classList.remove('modal-open');
-    document.body.style = '';
-
-    // Update tampilan data
-    fetchOrders();
-    fetchTables();
-    updateDashboardStats();
-    
-    // Pindah ke halaman pesanan otomatis
-    window.location.hash = '#orders';
-    
-    // Kembalikan tombol
-    btn.innerText = 'Proses Pesanan';
-    btn.disabled = false;
-    alert('Pesanan berhasil dikirim ke Admin!');
-
-  } catch (error) {
-    console.error("Gagal pesanan:", error);
-    alert('Gagal mengirim pesanan. Pastikan Backend menyala!');
-    btn.innerText = 'Proses Pesanan';
-    btn.disabled = false;
-  }
+  await api.post('/orders', {
+    table_id: parseInt(tableId),
+    total_price: keranjang.reduce((acc, k) => acc + (k.price * k.quantity), 0),
+    items: keranjang.map(k => ({ menu_id: k.menu_id, quantity: k.quantity, price: k.price }))
+  });
+  
+  keranjang = []; perbaruiJumlahKeranjang();
+  bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
+  ambilDataPesanan(); ambilDataMeja(); alert('Pesanan terkirim!');
 });
 
-// Tambah/Edit Menu & Meja
+// Add Menu
 document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const formData = new FormData();
-  formData.append('name', document.getElementById('menuName').value);
-  formData.append('category', document.getElementById('menuCategory').value);
-  formData.append('price', document.getElementById('menuPrice').value);
-  if (document.getElementById('menuImage').files[0]) formData.append('image', document.getElementById('menuImage').files[0]);
-  await api.post('/menu', formData);
-  fetchMenus(); e.target.reset();
-  bootstrap.Modal.getInstance(document.getElementById('addMenuModal'))?.hide();
+  const fd = new FormData();
+  fd.append('name', document.getElementById('menuName').value);
+  fd.append('category', document.getElementById('menuCategory').value);
+  fd.append('price', document.getElementById('menuPrice').value);
+  if (document.getElementById('menuImage').files[0]) fd.append('image', document.getElementById('menuImage').files[0]);
+  
+  await api.post('/menu', fd);
+  ambilDataMenu(); e.target.reset();
+  bootstrap.Modal.getInstance(document.getElementById('addMenuModal')).hide();
 });
 
+// Edit Menu Submit
 document.getElementById('editMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = document.getElementById('editMenuId').value;
-  const formData = new FormData();
-  formData.append('name', document.getElementById('editMenuName').value);
-  formData.append('category', document.getElementById('editMenuCategory').value);
-  formData.append('price', document.getElementById('editMenuPrice').value);
-  if (document.getElementById('editMenuImage').files[0]) formData.append('image', document.getElementById('editMenuImage').files[0]);
-  await api.put(`/menu/${id}`, formData);
-  fetchMenus();
-  bootstrap.Modal.getInstance(document.getElementById('editMenuModal'))?.hide();
+  const fd = new FormData();
+  fd.append('name', document.getElementById('editMenuName').value);
+  fd.append('category', document.getElementById('editMenuCategory').value);
+  fd.append('price', document.getElementById('editMenuPrice').value);
+  
+  const fileInput = document.getElementById('editMenuImage');
+  if (fileInput.files[0]) fd.append('image', fileInput.files[0]);
+
+  try {
+    await api.put(`/menu/${id}`, fd);
+    ambilDataMenu();
+    bootstrap.Modal.getInstance(document.getElementById('editMenuModal')).hide();
+    alert('Menu diperbarui!');
+  } catch (err) { console.error(err); }
 });
 
+// Add Table
 document.getElementById('addTableForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   await api.post('/tables', { table_number: document.getElementById('tableNumber').value });
-  fetchTables(); e.target.reset();
-  bootstrap.Modal.getInstance(document.getElementById('addTableModal'))?.hide();
+  ambilDataMeja(); e.target.reset();
+  bootstrap.Modal.getInstance(document.getElementById('addTableModal')).hide();
 });
 
-// === 6. FETCH DATA ADMIN ===
-async function fetchTables() {
+// === 7. ADMIN DATA FETCH ===
+async function ambilDataMeja() {
   const data = await api.get('/tables');
   if (data) {
     const container = document.getElementById('table-container');
     if (!container) return;
     container.innerHTML = '';
-    data.forEach(t => {
+    data.forEach(m => {
       container.innerHTML += `
-        <div class="col">
-          <div class="card shadow-sm border-0 rounded-4 text-center p-4 h-100">
-            <h1>${t.table_number}</h1>
-            <span class="badge ${t.status === 'kosong' ? 'bg-success' : 'bg-danger'} mb-3">${t.status}</span>
-            <button class="btn btn-sm btn-outline-danger btn-delete-table mt-auto" data-id="${t.id}">Hapus Meja</button>
+        <div class="col-6 col-md-3">
+          <div class="card shadow-sm border-0 rounded-4 text-center p-4">
+            <h1>${m.table_number}</h1>
+            <span class="badge ${m.status === 'kosong' ? 'bg-success' : 'bg-danger'} mb-3">${m.status}</span>
+            <button class="btn btn-sm btn-outline-danger btn-delete-table" data-id="${m.id}">Hapus</button>
           </div>
         </div>`;
     });
   }
 }
 
-async function fetchOrders() {
+// === 7. ADMIN DATA FETCH ===
+// ... (biarkan fungsi ambilDataMeja di atasnya tetap ada) ...
+
+async function ambilDataPesanan() {
   try {
     const data = await api.get('/orders');
     const tbody = document.getElementById('orders-table-body');
     if (!tbody) return;
-    tbody.innerHTML = '';
+    
+    // Pastikan colspan 6 karena ada 6 kolom
+    tbody.innerHTML = data?.length ? '' : '<tr><td colspan="6" class="text-center py-3">Kosong</td></tr>';
 
-    if (!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada pesanan masuk</td></tr>';
-      return;
-    }
+    data?.forEach(p => {
+      // 1. Susun daftar menu yang dipesan (Badge abu-abu)
+      let detailMenu = '';
+      if (p.OrderItems && p.OrderItems.length > 0) {
+        detailMenu = p.OrderItems.map(item => {
+          const menuTerkait = daftarMenu.find(m => m.id === item.menu_id);
+          const namaMenu = menuTerkait ? menuTerkait.name : 'Item Dihapus';
+          return `<span class="badge bg-secondary mb-1 me-1">${item.quantity}x ${namaMenu}</span>`;
+        }).join('');
+      } else {
+        detailMenu = '<span class="text-muted small">-</span>'; // Jika data lama tidak punya detail
+      }
 
-    data.forEach(o => {
-      const nomorMeja = o.Table ? o.Table.table_number : '??';
+      // 2. Cetak baris tabel sesuai URUTAN SCREENSHOT ANDA
       tbody.innerHTML += `
         <tr>
-          <td class="ps-4 fw-bold">#ORD-${o.id}</td>
-          <td><span class="fw-bold">Meja ${nomorMeja}</span></td>
-          <td class="text-success fw-bold">Rp ${Number(o.total_price).toLocaleString('id-ID')}</td>
-          <td><span class="badge ${o.status === 'pending' ? 'bg-warning text-dark' : 'bg-success'} px-2 py-1">${o.status}</span></td>
+          <td class="ps-4 fw-bold">#ORD-${p.id}</td>
+          
+          <td>Meja ${p.Table?.table_number || '??'}</td>
+          
+          <td>Rp ${p.total_price.toLocaleString('id-ID')}</td>
+          
+          <td style="max-width: 250px; line-height: 1.8;">${detailMenu}</td>
+          
+          <td><span class="badge ${p.status === 'pending' ? 'bg-warning text-dark' : 'bg-success'}">${p.status}</span></td>
+          
           <td class="text-center">
-            ${o.status === 'pending' ? `<button class="btn btn-sm btn-success btn-finish-order me-1" data-id="${o.id}"><i class="bi bi-check-lg"></i> Selesai</button>` : ''}
-            <button class="btn btn-sm btn-outline-danger btn-delete-order" data-id="${o.id}"><i class="bi bi-trash"></i></button>
+            ${p.status === 'pending' ? `<button class="btn btn-sm btn-success btn-finish-order me-1" data-id="${p.id}">Selesai</button>` : ''}
+            <button class="btn btn-sm btn-outline-danger btn-delete-order" data-id="${p.id}"><i class="bi bi-trash"></i></button>
           </td>
         </tr>`;
     });
-  } catch (err) {
-    console.error("Gagal memuat pesanan:", err);
+  } catch (err) { 
+    console.error("Error ambil pesanan:", err); 
   }
 }

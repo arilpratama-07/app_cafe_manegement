@@ -1,52 +1,80 @@
+//STYLE DASAR HALAMAN
 body {
-  background-color: #f4f6f9;
-  overflow-x: hidden;
+  background-color: #f4f6f9; /* Warna background */
+  overflow-x: hidden; /* Mencegah scroll horizontal */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+//SIDEBAR
 
-/* --- UI SIDEBAR --- */
 .sidebar {
-  min-width: 260px;
-  max-width: 260px;
-  min-height: 100vh;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-  position: sticky;
+  min-width: 260px; /* Lebar minimum sidebar */
+  max-width: 260px; /* Lebar maksimum sidebar */
+  min-height: 100vh; /* Tinggi full layar */
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1); /* Bayangan sidebar */
+  position: sticky; /* Sidebar tetap saat scroll */
   top: 0;
 }
 
+/* Link menu sidebar */
 .sidebar .nav-link {
   color: #adb5bd;
   padding: 12px 20px;
   border-radius: 8px;
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 500; /*tebal tulisan*/
+
+  /* Animasi hover */
   transition: all 0.3s ease;
 }
 
+/* Efek saat menu disentuh mouse */
 .sidebar .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.05);
   color: #fff;
+
+  /* Geser sedikit ke kanan */
   transform: translateX(5px);
 }
 
+/* Menu aktif */
 .sidebar .nav-link.active {
   background-color: #ffc107; 
   color: #212529 !important; 
   font-weight: 600;
-  box-shadow: 0 4px 6px rgba(255, 193, 7, 0.3);
-}
+  border-radius: 8px; /* Tambahan: agar sudutnya tidak terlalu kaku */
+  transition: all 0.3s ease; /* Tambahan: agar transisi saat diklik lebih smooth */
 
-/* --- TAMPILAN KONTEN --- */
+  /* Shadow menu aktif */
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+} 
+
+/* TAMPILAN HALAMAN */
+
+/* Semua section disembunyikan */
 .view-section {
   display: none;
+
+  /* Animasi muncul */
   animation: fadeIn 0.4s ease-in-out;
 }
 
+/* Section aktif ditampilkan */
 .view-section.active {
   display: block;
 }
 
+/* ANIMASI FADE IN */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
+
+  /* Kondisi awal animasi */
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  /* Kondisi akhir animasi */
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -1,9 +1,20 @@
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define("Table", {
-    table_number: DataTypes.INTEGER,
-    status: {
+  const Table = sequelize.define("Table", {
+    // Sesuaikan dengan controller: namanya table_number
+    table_number: {
       type: DataTypes.STRING,
-      defaultValue: "kosong",
+      allowNull: false,
+      unique: true,
     },
+    // Sesuaikan dengan controller: status "kosong" dan "terisi"
+    status: {
+      type: DataTypes.ENUM("kosong", "terisi"),
+      defaultValue: "kosong",
+    }
+  }, {
+    tableName: "tables",
+    timestamps: true, 
   });
+
+  return Table; 
 };

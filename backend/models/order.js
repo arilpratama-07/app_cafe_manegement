@@ -1,9 +1,9 @@
+// Contoh isi file backend/models/Order.js
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define("Order", {
-    total_price: DataTypes.FLOAT,
-    status: {
-      type: DataTypes.STRING,
-      defaultValue: "pending",
-    },
+  const Order = sequelize.define('Order', {
+    total_price: DataTypes.DECIMAL(10, 2),
+    status: DataTypes.STRING,
+    table_id: DataTypes.INTEGER
   });
+  return Order;
 };
