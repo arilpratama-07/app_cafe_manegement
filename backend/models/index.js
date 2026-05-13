@@ -14,14 +14,14 @@ const sequelize = new Sequelize(
 );
 
 // 2. Import & Inisialisasi Model
-// Pastikan baris-baris ini ada SEBELUM bagian relasi/associations
+// Pastikan baris-baris ini ada SETELAH inisialisasi koneksi di atas
+const User = require('./User')(sequelize, DataTypes); // <--- USER PINDAH KE SINI
 const Menu = require('./Menu')(sequelize, DataTypes);
 const Table = require('./Table')(sequelize, DataTypes);
 const Order = require('./Order')(sequelize, DataTypes);
 const OrderItem = require('./OrderItem')(sequelize, DataTypes);
 
 // 3. Definisi Relasi (Associations)
-// Sekarang variabel Order, Table, dll sudah dikenali oleh sistem
 
 // Relasi Order ke Table
 Order.belongsTo(Table, { foreignKey: 'table_id' });
@@ -37,7 +37,8 @@ OrderItem.belongsTo(Menu, { foreignKey: 'menu_id' });
 // 4. Export database object
 const db = {
   sequelize,
-  Sequelize,
+  Sequelize, // Tambahkan kembali class Sequelize untuk jaga-jaga
+  User,      // <--- TAMBAHKAN USER DI SINI AGAR BISA DIPANGGIL
   Menu,
   Table,
   Order,
