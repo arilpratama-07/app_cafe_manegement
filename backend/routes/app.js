@@ -1,15 +1,15 @@
 require("dotenv").config();
 
 const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
+const cors = require("cors"); //// Import middleware CORS
+const bodyParser = require("body-parser"); // // Import body-parser untuk membaca JSON
 
 const { sequelize } = require("./models");
 
 const app = express();
 
-app.use(cors());
-app.use(bodyParser.json());
+app.use(cors()); // Mengaktifkan CORS untuk semua route API
+app.use(bodyParser.json()); // Mengubah request JSON menjadi object JavaScript
 
 app.use("/menu", require("./routes/menuRoutes"));
 app.use("/orders", require("./routes/orderRoutes"));

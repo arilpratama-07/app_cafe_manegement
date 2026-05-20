@@ -60,9 +60,9 @@ exports.finishOrder = async (req, res) => {
     await order.update({ status: 'completed' });
 
     // 3b. MATIKAN PENGOSONGAN MEJA (Tambahkan // di awal baris)
-    // if (order.table_id) {
-    //   await Table.update({ status: 'kosong' }, { where: { id: order.table_id } });
-    // }
+    if (order.table_id) {
+      await Table.update({ status: 'kosong' }, { where: { id: order.table_id } });
+    }
 
     // 3c. Ubah juga pesan suksesnya agar lebih sesuai
     res.json({ message: "Pesanan selesai, meja tetap terisi" }); 

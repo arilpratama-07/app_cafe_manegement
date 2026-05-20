@@ -9,4 +9,6 @@ router.post('/', orderController.create);
 router.delete('/:id', orderController.delete);
 router.patch('/:id/finish', orderController.finishOrder);
 
-module.exports = router;
+
+// Export router agar bisa dipakai di app.js
+module.exports = router; 

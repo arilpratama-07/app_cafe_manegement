@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const menuController = require('../controllers/menuController');
-const multer = require('multer');
-const path = require('path');
+const multer = require('multer'); // Import multer untuk upload file/gambar
+const path = require('path'); // Import path untuk mengambil ekstensi file
 
 // Konfigurasi tempat simpan foto
 const storage = multer.diskStorage({
