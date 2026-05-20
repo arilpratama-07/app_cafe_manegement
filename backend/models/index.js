@@ -20,11 +20,12 @@ const sequelize = new Sequelize(
 );
 
 // 2. Import & Inisialisasi Model
-const User = require('./User')(sequelize, DataTypes);
-const Menu = require('./Menu')(sequelize, DataTypes);
-const Table = require('./Table')(sequelize, DataTypes);
-const Order = require('./Order')(sequelize, DataTypes);
-const OrderItem = require('./OrderItem')(sequelize, DataTypes);
+// 2. Import & Inisialisasi Model (Sesuaikan dengan nama file asli di folder!)
+const User = require('./user')(sequelize, DataTypes); 
+const Menu = require('./menu')(sequelize, DataTypes);
+const Table = require('./table')(sequelize, DataTypes);
+const Order = require('./order')(sequelize, DataTypes);
+const OrderItem = require('./orderItem')(sequelize, DataTypes);
 
 // 3. Definisi Relasi (Associations)
 Order.belongsTo(Table, { foreignKey: 'table_id' });
