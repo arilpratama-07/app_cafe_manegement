@@ -1,7 +1,7 @@
 const { Sequelize, DataTypes } = require('sequelize');
 require('dotenv').config();
 
-// 1. Inisialisasi Koneksi Database
+// 1. Inisialisasi Koneksi Database (Sudah dijinakkan untuk Vercel & TiDB Cloud)
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'cafe_db',
   process.env.DB_USER || 'root',
@@ -9,36 +9,37 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
-    logging: false
+    dialectModule: require('mysql2'), // <-- SAKTI 1: Paksa Vercel membaca library mysql2
+    logging: false,
+    dialectOptions: process.env.DB_HOST ? {
+      ssl: {
+        rejectUnauthorized: true // <-- SAKTI 2: Wajib aman pakai SSL kalau tersambung ke TiDB Cloud online
+      }
+    } : {} // Kalau di localhost laptop (tanpa env), fitur SSL otomatis mati biar tidak error
   }
 );
 
 // 2. Import & Inisialisasi Model
-// Pastikan baris-baris ini ada SETELAH inisialisasi koneksi di atas
-const User = require('./User')(sequelize, DataTypes); // <--- USER PINDAH KE SINI
+const User = require('./User')(sequelize, DataTypes);
 const Menu = require('./Menu')(sequelize, DataTypes);
 const Table = require('./Table')(sequelize, DataTypes);
 const Order = require('./Order')(sequelize, DataTypes);
 const OrderItem = require('./OrderItem')(sequelize, DataTypes);
 
 // 3. Definisi Relasi (Associations)
-
-// Relasi Order ke Table
 Order.belongsTo(Table, { foreignKey: 'table_id' });
 Table.hasMany(Order, { foreignKey: 'table_id' });
 
-// Relasi Order ke OrderItem (Detail)
 Order.hasMany(OrderItem, { foreignKey: 'order_id' });
 OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 
-// Relasi OrderItem ke Menu (Untuk tahu nama makanan)
 OrderItem.belongsTo(Menu, { foreignKey: 'menu_id' });
 
 // 4. Export database object
 const db = {
   sequelize,
-  Sequelize, // Tambahkan kembali class Sequelize untuk jaga-jaga
-  User,      // <--- TAMBAHKAN USER DI SINI AGAR BISA DIPANGGIL
+  Sequelize, 
+  User,      
   Menu,
   Table,
   Order,
