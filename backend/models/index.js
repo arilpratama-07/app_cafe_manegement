@@ -4,18 +4,18 @@ require('dotenv').config();
 // 1. Inisialisasi Koneksi Database (Sudah dijinakkan untuk Vercel & TiDB Cloud)
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'cafe_db',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASS || '',
+  process.env.DB_USER || '26mH6PHTHxZ8bU2.root',
+  process.env.DB_PASSWORD || 'EJCdztLQRXcLNxH6', // <-- Ganti DB_PASS menjadi DB_PASSWORD di sini
   {
     host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
-    dialectModule: require('mysql2'), // <-- SAKTI 1: Paksa Vercel membaca library mysql2
+    dialectModule: require('mysql2'), 
     logging: false,
     dialectOptions: process.env.DB_HOST ? {
       ssl: {
-        rejectUnauthorized: true // <-- SAKTI 2: Wajib aman pakai SSL kalau tersambung ke TiDB Cloud online
+        rejectUnauthorized: true 
       }
-    } : {} // Kalau di localhost laptop (tanpa env), fitur SSL otomatis mati biar tidak error
+    } : {} 
   }
 );
 
