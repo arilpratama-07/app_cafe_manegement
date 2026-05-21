@@ -26,7 +26,7 @@ function aturNavigasi() {
       return; 
     }
     
-    // Proteksi Pembeli (User) Buka Dasbor/Meja
+    // Proteksi Pembeli (User biasa) Buka Dasbor/Meja Pegawai
     if (user && user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables')) {
       alert("Akses ditolak! Halaman ini khusus Pegawai Cafe.");
       window.location.hash = '#menu';
@@ -57,24 +57,23 @@ function aturNavigasi() {
       if(btnCart) btnCart.style.setProperty('display', 'none', 'important');
       if(btnCartMobile) btnCartMobile.style.setProperty('display', 'none', 'important');
     } else {
-      // Ingat: Admin dan Kasir sekarang sama-sama dihitung sebagai role 'admin' di sistem ini
+      // Periksa apakah dia termasuk jajaran staf pegawai
       document.body.classList.toggle('is-admin', user.role === 'admin');
       
       if(sidebar) sidebar.style.setProperty('display', 'flex', 'important');
       if(btnCart) btnCart.style.setProperty('display', 'block', 'important');
-      if(btnCartMobile) btnCartMobile.style.setProperty('display', 'block', 'important');
+      if(btnCartMobile) btnCartMobile.style.setProperty('block', 'important');
 
       const userInfo = document.getElementById('user-info');
-      // Teks penanda apakah dia Pegawai atau Pembeli
       const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'PEMBELI';
       if (userInfo) userInfo.innerText = `Halo, ${user.username} (${labelTipe})`;
     }
 
-    // Update warna kuning di menu kiri
+    // Update warna kuning di menu navigasi samping
     document.querySelectorAll('.nav-link').forEach(tautan => tautan.classList.remove('active'));
     document.getElementById(`nav-${idTarget}`)?.classList.add('active');
 
-    // Fetch data
+    // Ambil data dari server sesuai halaman aktif
     if (idTarget === 'dashboard' && user?.role === 'admin') perbaruiStatistikDashboard();
     if (idTarget === 'menu') ambilDataMenu();
     if (idTarget === 'tables' && user?.role === 'admin') ambilDataMeja();
@@ -108,8 +107,6 @@ function tampilkanKartuMenu() {
   const kisiMenu = document.getElementById('menu-grid');
   if (!kisiMenu) return;
   kisiMenu.innerHTML = '';
-  
-  let user = null; try { user = JSON.parse(localStorage.getItem('userLogin')); } catch(e) {}
 
   daftarMenu.forEach(item => {
     let sumberGambar = item.image ? `http://localhost:5000${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
@@ -150,8 +147,6 @@ async function ambilDataPesanan() {
     data?.forEach(p => {
       let detail = p.OrderItems?.map(i => `<span class="badge bg-secondary me-1">${i.quantity}x ${daftarMenu.find(m => m.id === i.menu_id)?.name || 'Item'}</span>`).join('') || '-';
 
-      // Jika Pegawai (Admin/Kasir) melihat tabel: Muncul tombol Selesai & Hapus
-      // Jika Pembeli (User) melihat tabel: Hanya muncul label "Menunggu Kasir"
       let kolomAksi = '';
       if (user && user.role === 'admin') {
         kolomAksi = `<td class="text-center">
@@ -200,7 +195,7 @@ async function ambilDataMeja() {
   }
 }
 
-// === 6. LOGIN (DENGAN PEMETAAN ROLE OTOMATIS) ===
+// === 6. LOGIN (DENGAN PEMETAAN PERAN BARU) ===
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value;
@@ -208,23 +203,18 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
   try {
     const user = await api.post('/login', { username, password });
-    
     const unameStr = username.toLowerCase();
     
-    // LOGIKA PENENTUAN HAK AKSES BARU:
-    // Jika login pakai nama 'admin' ATAU 'kasir', frontend akan memberinya hak penuh (Pegawai)
-    if (unameStr.includes('admin') || unameStr.includes('kasir')) {
+    // PERBAIKAN LOGIKA: Jika nama mengandung admin, kasir, ATAU user, berikan hak Pegawai
+    if (unameStr.includes('admin') || unameStr.includes('kasir') || unameStr === 'user') {
         user.role = 'admin'; 
-    } 
-    // Jika login selain admin/kasir (misal 'user' atau 'pembeli'), dia jadi pelanggan
-    else {
+    } else {
         user.role = 'user'; 
     }
 
     localStorage.setItem('userLogin', JSON.stringify(user)); 
     alert(`Berhasil masuk sebagai: ${user.role === 'admin' ? 'PEGAWAI CAFE' : 'PELANGGAN'}`);
     
-    // Pegawai diarahkan ke dashboard, Pelanggan diarahkan ke menu makanan
     window.location.hash = (user.role === 'admin') ? '#dashboard' : '#menu';
     aturNavigasi();
   } catch (err) { 
@@ -264,11 +254,11 @@ document.getElementById('btnOpenCart')?.addEventListener('click', () => {
       <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
         <div><div class="fw-bold text-truncate" style="max-width:150px;">${item.name}</div><small class="text-muted">Rp ${item.price.toLocaleString('id-ID')}</small></div>
         <div class="d-flex align-items-center">
-          <button class=\"btn btn-sm btn-outline-dark px-2 py-0 btn-minus-qty\" data-index=\"${idx}\">-</button>
-          <span class=\"mx-2 fw-bold\">${item.quantity}</span>
-          <button class=\"btn btn-sm btn-outline-dark px-2 py-0 btn-plus-qty\" data-index=\"${idx}\">+</button>
-          <div class=\"ms-3 fw-bold text-end\" style=\"min-width: 80px;\">Rp ${subtotal.toLocaleString('id-ID')}</div>
-          <button class=\"btn btn-sm text-danger ms-2 btn-remove-cart\" data-index=\"${idx}\"><i class=\"bi bi-trash\"></i></button>
+          <button class="btn btn-sm btn-outline-dark px-2 py-0 btn-minus-qty" data-index="${idx}">-</button>
+          <span class="mx-2 fw-bold">${item.quantity}</span>
+          <button class="btn btn-sm btn-outline-dark px-2 py-0 btn-plus-qty" data-index="${idx}">+</button>
+          <div class="ms-3 fw-bold text-end" style="min-width: 80px;">Rp ${subtotal.toLocaleString('id-ID')}</div>
+          <button class="btn btn-sm text-danger ms-2 btn-remove-cart" data-index="${idx}"><i class="bi bi-trash"></i></button>
         </div>
       </div>`;
   });
@@ -309,8 +299,7 @@ document.addEventListener('click', async (e) => {
     perbaruiJumlahKeranjang(); document.getElementById('btnOpenCart').click();
   }
 
-  // --- API Calls (HANYA PEGAWAI / ADMIN YANG BISA KLIK INI) ---
-  
+  // --- API Operator Pegawai ---
   if (target.closest('.btn-edit-menu') && user?.role === 'admin') {
     const id = parseInt(target.closest('.btn-edit-menu').dataset.id);
     const menu = daftarMenu.find(m => m.id === id);
