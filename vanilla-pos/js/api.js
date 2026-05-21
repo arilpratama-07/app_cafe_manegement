@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'https://app-cafe-manegement.vercel.app/api'; // Ganti dengan URL backend Anda
 
 export default {
 

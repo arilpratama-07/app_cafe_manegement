@@ -5,7 +5,9 @@ let daftarMeja = [];
 let daftarPesanan = [];
 let keranjang = [];
 
-// === 1. NAVIGASI & KONTROL AKSES (VERSI SEMPURNA) ===
+const BASE_URL = 'https://app-cafe-manegement.vercel.app';
+
+// === 1. NAVIGASI & KONTROL AKSES ===
 function aturNavigasi() {
   try {
     let user = null;
@@ -67,9 +69,10 @@ function aturNavigasi() {
     
     if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
     if (btnCart) btnCart.style.setProperty('display', 'block', 'important');
-    if (btnCartMobile) btnCartMobile.style.setProperty('block', 'important');
+    // ✅ PERBAIKAN 3: Memperbaiki typo properti display pada tombol mobile
+    if (btnCartMobile) btnCartMobile.style.setProperty('display', 'block', 'important');
 
-    // 🔒 PERBAIKAN UTAMA: Menyembunyikan tombol navigasi fisik di Sidebar secara Realtime
+    // 🔒 PERBAIKAN: Menyembunyikan tombol navigasi fisik di Sidebar secara Realtime
     const navDashboard = document.getElementById('nav-dashboard');
     const navTables = document.getElementById('nav-tables');
     
@@ -77,7 +80,6 @@ function aturNavigasi() {
       if (navDashboard) navDashboard.style.setProperty('display', 'block', 'important');
       if (navTables) navTables.style.setProperty('display', 'block', 'important');
     } else {
-      // Hilangkan total menu dasbor & meja dari menu kiri jika yang masuk adalah pelanggan ('user')
       if (navDashboard) navDashboard.style.setProperty('display', 'none', 'important');
       if (navTables) navTables.style.setProperty('display', 'none', 'important');
     }
@@ -127,7 +129,8 @@ function tampilkanKartuMenu() {
   kisiMenu.innerHTML = '';
 
   daftarMenu.forEach(item => {
-    let sumberGambar = item.image ? `http://localhost:5000${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
+    // ✅ PERBAIKAN 1: Mengubah http://localhost:5000 menjadi BASE_URL (Vercel)
+    let sumberGambar = item.image ? `${BASE_URL}${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
     
     kisiMenu.innerHTML += `
       <div class="col-6 col-md-4 col-lg-3">
@@ -152,7 +155,7 @@ function tampilkanKartuMenu() {
   });
 }
 
-// === 4. PESANAN (Bisa Diakses Semua - Bedakan Tombol Aksi) ===
+// === 4. PESANAN ===
 async function ambilDataPesanan() {
   try {
     const data = await api.get('/orders');
@@ -192,7 +195,7 @@ async function ambilDataPesanan() {
   } catch (err) { console.error(err); }
 }
 
-// === 5. MEJA (Hanya Pegawai) ===
+// === 5. MEJA ===
 async function ambilDataMeja() {
   const data = await api.get('/tables');
   if (data) {
@@ -213,7 +216,7 @@ async function ambilDataMeja() {
   }
 }
 
-// === 6. LOGIN (PEMETAAN ROLE SEBENARNYA) ===
+// === 6. LOGIN ===
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value;
@@ -341,7 +344,8 @@ document.addEventListener('click', async (e) => {
   if (target.closest('.btn-finish-order') && user?.role === 'admin') {
     if(confirm('Tandai pesanan ini sudah selesai dibuat?')) {
       const id = target.closest('.btn-finish-order').dataset.id;
-      const res = await fetch(`http://localhost:5000/orders/${id}/finish`, { method: 'PATCH' });
+      // ✅ PERBAIKAN 2: Mengubah http://localhost:5000 menjadi BASE_URL (Vercel)
+      const res = await fetch(`${BASE_URL}/orders/${id}/finish`, { method: 'PATCH' });
       if (res.ok) { ambilDataPesanan(); ambilDataMeja(); alert('Pesanan diselesaikan!'); }
     }
   }
