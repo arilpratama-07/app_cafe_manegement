@@ -39,9 +39,9 @@ function aturNavigasi() {
 
     let idTarget = hashURL.replace('#', '');
 
-    // 🔒 BENTENG PROTEKSI HAK AKSES URL (Halaman orders ikut dikunci untuk user)
-    if (user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables' || idTarget === 'orders')) {
-      alert("Akses ditolak! Halaman ini hanya untuk Pegawai/Kasir Cafe.");
+    // 🔒 BENTENG PROTEKSI HAK AKSES URL (Halaman dashboard & tables dikunci untuk kasir, orders dibuka!)
+    if (user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables')) {
+      alert("Akses ditolak! Halaman ini hanya untuk Pegawai/Admin Cafe.");
       window.location.hash = '#menu';
       return;
     }
@@ -71,7 +71,7 @@ function aturNavigasi() {
     if (btnCart) btnCart.style.setProperty('display', 'block', 'important');
     if (btnCartMobile) btnCartMobile.style.setProperty('display', 'block', 'important');
 
-    // 🔒 Menyembunyikan tombol navigasi fisik di Sidebar secara Realtime
+    // 🔒 Kontrol Menu Navigasi Fisik di Sidebar (Menu Pesanan dibuka untuk kasir!)
     const navDashboard = document.getElementById('nav-dashboard');
     const navTables = document.getElementById('nav-tables');
     const navOrders = document.getElementById('nav-orders');
@@ -83,23 +83,23 @@ function aturNavigasi() {
     } else {
       if (navDashboard) navDashboard.style.setProperty('display', 'none', 'important');
       if (navTables) navTables.style.setProperty('display', 'none', 'important');
-      if (navOrders) navOrders.style.setProperty('display', 'none', 'important');
+      if (navOrders) navOrders.style.setProperty('display', 'block', 'important'); // ✅ Kasir bisa melihat tombol pesanan
     }
 
     // Perbarui teks info nama pengguna di sidebar
     const userInfo = document.getElementById('user-info');
-    const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'KASIR';
+    const labelTipe = user.role === 'admin' ? 'ADMIN' : 'KASIR';
     if (userInfo) userInfo.innerText = `Halo, ${user.username} (${labelTipe})`;
 
     // Beri indikator warna aktif (kuning) pada menu sidebar yang sedang dibuka
     document.querySelectorAll('.nav-link').forEach(tautan => tautan.classList.remove('active'));
     document.getElementById(`nav-${idTarget}`)?.classList.add('active');
 
-    // Tarik data parsial dari server
+    // Tarik data dari server
     if (idTarget === 'dashboard' && user.role === 'admin') perbaruiStatistikDashboard();
     if (idTarget === 'menu') ambilDataMenu();
     if (idTarget === 'tables' && user.role === 'admin') ambilDataMeja();
-    if (idTarget === 'orders' && user.role === 'admin') ambilDataPesanan(); // 🔒 Diproteksi khusus admin
+    if (idTarget === 'orders') ambilDataPesanan(); // ✅ Kasir & Admin sama-sama bisa menarik data pesanan
 
   } catch (error) { console.error("Navigasi Error:", error); }
 }
@@ -107,7 +107,7 @@ function aturNavigasi() {
 window.addEventListener('hashchange', aturNavigasi);
 window.addEventListener('DOMContentLoaded', aturNavigasi);
 
-// === 2. DASHBOARD (Hanya Pegawai) ===
+// === 2. DASHBOARD (Hanya Admin) ===
 async function perbaruiStatistikDashboard() {
   try {
     const [dataMenu, dataMeja, dataPesanan] = await Promise.all([
@@ -171,9 +171,17 @@ async function ambilDataPesanan() {
 
       let kolomAksi = '';
       if (user && user.role === 'admin') {
+        // Admin bisa menyelesaikan & menghapus pesanan
         kolomAksi = `<td class="text-center">
           ${p.status === 'pending' ? `<button class="btn btn-sm btn-success btn-finish-order me-1" data-id="${p.id}">Selesai</button>` : ''}
           <button class="btn btn-sm btn-outline-danger btn-delete-order" data-id="${p.id}"><i class="bi bi-trash"></i></button>
+        </td>`;
+      } else {
+        // Kasir hanya bisa melihat status tanpa tombol eksekusi
+        kolomAksi = `<td class="text-center">
+          ${p.status === 'pending' 
+             ? `<span class="badge bg-light text-warning border border-warning border-opacity-20"><i class="bi bi-clock-history"></i> Antrean Dapur</span>` 
+             : `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-check2-circle"></i> Selesai</span>`}
         </td>`;
       }
 
@@ -224,12 +232,18 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     if (unameStr.includes('admin')) {
         user.role = 'admin'; 
     } else {
-        user.role = 'user'; // Otomatis menjadi role user (kasir toko)
+        user.role = 'user'; 
     }
 
     localStorage.setItem('userLogin', JSON.stringify(user)); 
-    alert(`Berhasil masuk sebagai: ${user.role === 'admin' ? 'PEGAWAI CAFE' : 'KASIR TOKO'}`);
-    
+
+    // ✅ RE-FIX POPUP SESUAI REQUEST USER KASIR
+    if (user.role === 'admin') {
+        alert("Berhasil masuk sebagai: PEGAWAI CAFE");
+    } else {
+        alert("Halo, selamat datang di Cafe Alba dan hanya bisa memesan dan melihat pesanan");
+    }
+
     window.location.hash = (user.role === 'admin') ? '#dashboard' : '#menu';
     aturNavigasi();
   } catch (err) { 
@@ -340,7 +354,7 @@ document.addEventListener('click', async (e) => {
     if(confirm('Tandai pesanan ini sudah selesai dibuat?')) {
       const id = target.closest('.btn-finish-order').dataset.id;
       const res = await fetch(`${BASE_URL}/orders/${id}/finish`, { method: 'PATCH' });
-      if (res.ok) { ambilDataPesanan(); ambilDataMeja(); alert('Pesanan diselesaikan!'); }
+      if (res.ok) { amibildataPesanan(); ambilDataMeja(); alert('Pesanan diselesaikan!'); }
     }
   }
 });
@@ -356,9 +370,7 @@ document.getElementById('btnSubmitOrder')?.addEventListener('click', async () =>
   });
   keranjang = []; perbaruiJumlahKeranjang();
   bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
-  if (localStorage.getItem('userLogin') && JSON.parse(localStorage.getItem('userLogin')).role === 'admin') {
-    ambilDataPesanan();
-  }
+  ambilDataPesanan(); // ✅ Kasir otomatis me-refresh tabel pesanannya sendiri setelah sukses order
   ambilDataMeja(); alert('Pesanan terkirim ke kasir!');
 });
 
