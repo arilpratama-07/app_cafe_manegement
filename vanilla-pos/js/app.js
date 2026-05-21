@@ -5,78 +5,96 @@ let daftarMeja = [];
 let daftarPesanan = [];
 let keranjang = [];
 
-// === 1. NAVIGASI & KONTROL AKSES ===
+// === 1. NAVIGASI & KONTROL AKSES (VERSI SEMPURNA) ===
 function aturNavigasi() {
   try {
     let user = null;
     try { user = JSON.parse(localStorage.getItem('userLogin')); } catch (e) {}
 
-    const hashURL = window.location.hash || '#dashboard';
+    // Jika belum login, paksa masuk ke layar login
+    if (!user) {
+      window.location.hash = '#login';
+      document.querySelectorAll('.view-section').forEach(bagian => {
+        bagian.classList.remove('active');
+        bagian.style.setProperty('display', 'none', 'important');
+      });
+      const loginPage = document.getElementById('login');
+      if (loginPage) {
+        loginPage.classList.add('active');
+        loginPage.style.setProperty('display', 'block', 'important');
+      }
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
+      return;
+    }
+
+    // Jika URL kosong atau masih di #login padahal sudah sukses autentikasi
+    let hashURL = window.location.hash;
+    if (!hashURL || hashURL === '#login') {
+      window.location.hash = (user.role === 'admin') ? '#dashboard' : '#menu';
+      return;
+    }
+
     let idTarget = hashURL.replace('#', '');
 
-    // Sembunyikan semua layar (Anti Layar Tumpuk)
+    // 🔒 BENTENG PROTEKSI HAK AKSES URL
+    if (user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables')) {
+      alert("Akses ditolak! Halaman ini hanya untuk Pegawai/Kasir Cafe.");
+      window.location.hash = '#menu';
+      return;
+    }
+
+    // Bersihkan layar dari tumpukan halaman lama
     document.querySelectorAll('.view-section').forEach(bagian => {
       bagian.classList.remove('active');
       bagian.style.setProperty('display', 'none', 'important');
     });
 
-    // Proteksi Belum Login
-    if (!user && idTarget !== 'login') {
-      window.location.hash = '#login';
-      return; 
-    }
-    
-    // Proteksi Pembeli (User biasa) Buka Dasbor/Meja Pegawai
-    if (user && user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables')) {
-      alert("Akses ditolak! Halaman ini khusus Pegawai Cafe.");
-      window.location.hash = '#menu';
-      return;
-    }
-
-    // Arahkan ke halaman utama setelah login
-    if (user && idTarget === 'login') {
-      window.location.hash = (user.role === 'admin') ? '#dashboard' : '#menu';
-      return;
-    }
-
-    // Tampilkan layar target
+    // Tampilkan halaman target utama
     const bagianTarget = document.getElementById(idTarget);
     if (bagianTarget) {
       bagianTarget.classList.add('active');
       bagianTarget.style.setProperty('display', 'block', 'important');
     }
 
-    // Atur Tampilan Sidebar & Kunci Master
+    // Atur visibilitas container utama
     const sidebar = document.getElementById('sidebar');
     const btnCart = document.getElementById('btnOpenCart');
     const btnCartMobile = document.getElementById('btnCartMobile');
 
-    if (!user) {
-      document.body.classList.remove('is-admin'); 
-      if(sidebar) sidebar.style.setProperty('display', 'none', 'important');
-      if(btnCart) btnCart.style.setProperty('display', 'none', 'important');
-      if(btnCartMobile) btnCartMobile.style.setProperty('display', 'none', 'important');
-    } else {
-      // Periksa apakah dia termasuk jajaran staf pegawai
-      document.body.classList.toggle('is-admin', user.role === 'admin');
-      
-      if(sidebar) sidebar.style.setProperty('display', 'flex', 'important');
-      if(btnCart) btnCart.style.setProperty('display', 'block', 'important');
-      if(btnCartMobile) btnCartMobile.style.setProperty('block', 'important');
+    // Sinkronisasi class master .is-admin pada body HTML
+    document.body.classList.toggle('is-admin', user.role === 'admin');
+    
+    if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
+    if (btnCart) btnCart.style.setProperty('display', 'block', 'important');
+    if (btnCartMobile) btnCartMobile.style.setProperty('block', 'important');
 
-      const userInfo = document.getElementById('user-info');
-      const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'PEMBELI';
-      if (userInfo) userInfo.innerText = `Halo, ${user.username} (${labelTipe})`;
+    // 🔒 PERBAIKAN UTAMA: Menyembunyikan tombol navigasi fisik di Sidebar secara Realtime
+    const navDashboard = document.getElementById('nav-dashboard');
+    const navTables = document.getElementById('nav-tables');
+    
+    if (user.role === 'admin') {
+      if (navDashboard) navDashboard.style.setProperty('display', 'block', 'important');
+      if (navTables) navTables.style.setProperty('display', 'block', 'important');
+    } else {
+      // Hilangkan total menu dasbor & meja dari menu kiri jika yang masuk adalah pelanggan ('user')
+      if (navDashboard) navDashboard.style.setProperty('display', 'none', 'important');
+      if (navTables) navTables.style.setProperty('display', 'none', 'important');
     }
 
-    // Update warna kuning di menu navigasi samping
+    // Perbarui teks info nama pengguna di sidebar
+    const userInfo = document.getElementById('user-info');
+    const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'PELANGGAN';
+    if (userInfo) userInfo.innerText = `Halo, ${user.username} (${labelTipe})`;
+
+    // Beri indikator warna aktif (kuning) pada menu sidebar yang sedang dibuka
     document.querySelectorAll('.nav-link').forEach(tautan => tautan.classList.remove('active'));
     document.getElementById(`nav-${idTarget}`)?.classList.add('active');
 
-    // Ambil data dari server sesuai halaman aktif
-    if (idTarget === 'dashboard' && user?.role === 'admin') perbaruiStatistikDashboard();
+    // Tarik data parsial dari server
+    if (idTarget === 'dashboard' && user.role === 'admin') perbaruiStatistikDashboard();
     if (idTarget === 'menu') ambilDataMenu();
-    if (idTarget === 'tables' && user?.role === 'admin') ambilDataMeja();
+    if (idTarget === 'tables' && user.role === 'admin') ambilDataMeja();
     if (idTarget === 'orders') ambilDataPesanan();
 
   } catch (error) { console.error("Navigasi Error:", error); }
@@ -85,7 +103,7 @@ function aturNavigasi() {
 window.addEventListener('hashchange', aturNavigasi);
 window.addEventListener('DOMContentLoaded', aturNavigasi);
 
-// === 2. DASHBOARD ===
+// === 2. DASHBOARD (Hanya Pegawai) ===
 async function perbaruiStatistikDashboard() {
   try {
     const [dataMenu, dataMeja, dataPesanan] = await Promise.all([
@@ -97,7 +115,7 @@ async function perbaruiStatistikDashboard() {
   } catch (err) { console.warn("Dashboard error:", err); }
 }
 
-// === 3. MENU ===
+// === 3. MENU (Bisa Diakses Semua) ===
 async function ambilDataMenu() { 
   const data = await api.get('/menu');
   if (data) { daftarMenu = data; tampilkanKartuMenu(); }
@@ -134,7 +152,7 @@ function tampilkanKartuMenu() {
   });
 }
 
-// === 4. PESANAN ===
+// === 4. PESANAN (Bisa Diakses Semua - Bedakan Tombol Aksi) ===
 async function ambilDataPesanan() {
   try {
     const data = await api.get('/orders');
@@ -156,8 +174,8 @@ async function ambilDataPesanan() {
       } else {
         kolomAksi = `<td class="text-center">
           ${p.status === 'pending' 
-             ? `<span class="badge bg-light text-muted border"><i class="bi bi-clock"></i> Menunggu Kasir</span>` 
-             : `<span class="badge bg-success"><i class="bi bi-check-circle"></i> Pesanan Selesai</span>`}
+             ? `<span class="badge bg-light text-muted border"><i class="bi bi-clock-history"></i> Diproses Dapur</span>` 
+             : `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-check2-circle"></i> Sudah Hidangkan</span>`}
         </td>`;
       }
 
@@ -174,7 +192,7 @@ async function ambilDataPesanan() {
   } catch (err) { console.error(err); }
 }
 
-// === 5. MEJA ===
+// === 5. MEJA (Hanya Pegawai) ===
 async function ambilDataMeja() {
   const data = await api.get('/tables');
   if (data) {
@@ -195,7 +213,7 @@ async function ambilDataMeja() {
   }
 }
 
-// === 6. LOGIN (DENGAN PEMETAAN PERAN BARU) ===
+// === 6. LOGIN (PEMETAAN ROLE SEBENARNYA) ===
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value;
@@ -205,8 +223,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     const user = await api.post('/login', { username, password });
     const unameStr = username.toLowerCase();
     
-    // PERBAIKAN LOGIKA: Jika nama mengandung admin, kasir, ATAU user, berikan hak Pegawai
-    if (unameStr.includes('admin') || unameStr.includes('kasir') || unameStr === 'user') {
+    if (unameStr.includes('admin') || unameStr.includes('kasir')) {
         user.role = 'admin'; 
     } else {
         user.role = 'user'; 
