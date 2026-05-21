@@ -2,11 +2,9 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <!-- META: Menjamin tampilan optimal di perangkat seluler (skala 1:1 dan mencegah zoom berlebih) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cafe Alba - Sistem Kasir</title>
   
-  <!-- CSS: Menggunakan Bootstrap 5 untuk framework UI dan Bootstrap Icons untuk simbol -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   
@@ -59,31 +57,25 @@
 </head>
 <body>
 
-  <!-- OVERLAY: Layar gelap saat sidebar muncul di HP -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="app-container">
     
-    <!-- SIDEBAR NAVIGATION -->
     <nav class="sidebar py-3" id="sidebar" style="display: none;">
-      <!-- Branding Logo & User Info -->
       <div class="d-flex align-items-center mb-4 mt-2 px-4">
         <i class="bi bi-cup-hot-fill fs-1 text-warning me-3"></i>
         <div>
           <h5 class="mb-0 fw-bold fs-4">Cafe Alba</h5>
-          <small class="text-warning fw-bold" id="user-info"></small> <!-- Diisi via JS (Admin/Kasir) -->
-        </div>
+          <small class="text-warning fw-bold" id="user-info"></small> </div>
       </div>
 
-      <!-- Menu Navigasi -->
       <ul class="nav flex-column mb-auto">
         <li class="nav-item admin-only"><a class="nav-link" id="nav-dashboard" href="#dashboard"><i class="bi bi-speedometer2 me-2 fs-5"></i> Dasbor</a></li>
         <li class="nav-item"><a class="nav-link" id="nav-menu" href="#menu"><i class="bi bi-grid-fill me-2 fs-5"></i> Menu</a></li>
-        <li class="nav-item"><a class="nav-link" id="nav-orders" href="#orders"><i class="bi bi-receipt me-2 fs-5"></i> Pesanan</a></li>
+        <li class="nav-item admin-only"><a class="nav-link" id="nav-orders" href="#orders"><i class="bi bi-receipt me-2 fs-5"></i> Pesanan</a></li>
         <li class="nav-item admin-only"><a class="nav-link" id="nav-tables" href="#tables"><i class="bi bi-layers-half me-2 fs-5"></i> Pengaturan Meja</a></li>
       </ul>
 
-      <!-- Tombol Keluar -->
       <div class="px-3 mt-4 border-top pt-3 border-secondary">
         <a href="#" id="btnLogout" class="nav-link text-danger"><i class="bi bi-box-arrow-left me-2"></i> Keluar</a>
       </div>
@@ -91,7 +83,6 @@
 
     <main class="main-content">
       
-      <!-- SECTION: LOGIN -->
       <section id="login" class="view-section active" style="display: block !important;">
         <div class="d-flex justify-content-center align-items-center h-100">
           <div class="card shadow border-0 p-4" style="width: 100%; max-width: 400px; border-radius: 1rem;">
@@ -102,39 +93,33 @@
                <h3 class="fw-bold">Login Sistem</h3>
             </div>
             <form id="loginForm">
-  <!-- Input Username dengan Placeholder Khusus -->
-  <div class="mb-3">
-    <input type="text" id="loginUsername" class="form-control form-control-lg bg-light border-0" required placeholder="Username (user)">
-  </div>
-  
-  <!-- Input Password -->
-  <div class="mb-4">
-    <input type="password" id="loginPassword" class="form-control form-control-lg bg-light border-0" required placeholder="Password">
-  </div>
-  
-  <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold rounded-pill shadow-sm">Masuk</button>
-</form>
+              <div class="mb-3">
+                <input type="text" id="loginUsername" class="form-control form-control-lg bg-light border-0" required placeholder="Username">
+              </div>
+              
+              <div class="mb-4">
+                <input type="password" id="loginPassword" class="form-control form-control-lg bg-light border-0" required placeholder="Password">
+              </div>
+              
+              <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold rounded-pill shadow-sm">Masuk</button>
+            </form>
           </div>
         </div>
       </section>
       
-      <!-- HEADER MOBILE: Navbar yang muncul hanya di HP -->
       <div class="d-flex justify-content-between align-items-center mb-4 d-lg-none border-bottom pb-3">
         <div class="d-flex align-items-center">
           <button class="btn btn-dark me-3 rounded-3" id="btnToggleSidebar"><i class="bi bi-list fs-3"></i></button>
           <h4 class="mb-0 fw-bold text-warning">Cafe Alba</h4>
         </div>
-        <!-- Tombol Keranjang khusus Mobile -->
         <button class="btn btn-warning fw-bold position-relative d-md-none" onclick="document.getElementById('btnOpenCart').click()" id="btnCartMobile" style="display: none;">
           <i class="bi bi-cart3 fs-4"></i> <span class="badge rounded-pill bg-danger cart-badge" id="cart-count-mobile">0</span>
         </button>
       </div>
       
-      <!-- SECTION: DASHBOARD (Statistik Laporan - Admin Only) -->
       <section id="dashboard" class="view-section admin-only">
         <h3 class="fw-bold mb-4 d-none d-lg-block">Dasbor Laporan</h3>
         <div class="row g-3 g-md-4 mb-4">
-          <!-- Widget: Total Menu -->
           <div class="col-12 col-md-6 col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
               <div class="d-flex align-items-center">
@@ -143,7 +128,6 @@
               </div>
             </div>
           </div>
-          <!-- Widget: Total Meja -->
           <div class="col-12 col-md-6 col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
               <div class="d-flex align-items-center">
@@ -152,7 +136,6 @@
               </div>
             </div>
           </div>
-          <!-- Widget: Pesanan Aktif -->
           <div class="col-12 col-md-12 col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
               <div class="d-flex align-items-center">
@@ -164,26 +147,21 @@
         </div>
       </section>
 
-      <!-- SECTION: MENU (Katalog Produk) -->
       <section id="menu" class="view-section">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
           <h3 class="fw-bold mb-0 d-none d-lg-block"><i class="bi bi-grid-fill text-warning me-2"></i> Katalog Menu</h3>
           <div class="d-flex gap-2 w-100 w-md-auto">
-            <!-- Tombol Tambah Menu (Admin Only) -->
             <button class="btn btn-outline-dark fw-bold flex-grow-1 py-2 admin-only" data-bs-toggle="modal" data-bs-target="#addMenuModal">
               <i class="bi bi-plus-lg"></i> Tambah Menu
             </button>
-            <!-- Tombol Keranjang Desktop -->
             <button class="btn btn-warning fw-bold position-relative flex-grow-1 py-2 d-none d-md-block" id="btnOpenCart" style="display: none;">
               <i class="bi bi-cart3 me-1"></i> Keranjang <span class="badge rounded-pill bg-danger cart-badge" id="cart-count">0</span>
             </button>
           </div>
         </div>
-        <!-- Grid Menu: Akan diisi secara dinamis oleh app.js -->
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-md-4" id="menu-grid"></div>
       </section>
 
-      <!-- SECTION: ORDERS (Riwayat/Daftar Pesanan) -->
       <section id="orders" class="view-section">
         <h3 class="fw-bold mb-4 d-none d-lg-block">Daftar Pesanan</h3>
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -199,13 +177,11 @@
                   <th class="text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody id="orders-table-body"></tbody> <!-- Diisi via JS -->
-            </table>
+              <tbody id="orders-table-body"></tbody> </table>
           </div>
         </div>
       </section>
 
-      <!-- SECTION: TABLES (Manajemen Meja - Admin Only) -->
       <section id="tables" class="view-section admin-only">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h3 class="fw-bold d-none d-lg-block"><i class="bi bi-layers-half text-warning me-2"></i> Pengaturan Meja</h3>
@@ -219,14 +195,12 @@
     </main>
   </div>
 
-  <!-- MODAL: KERANJANG BELANJA -->
   <div class="modal fade" id="cartModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content border-0 rounded-4 shadow">
         <div class="modal-header bg-light border-0"><h5 class="fw-bold"><i class="bi bi-cart-check me-2"></i>Keranjang</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body p-4">
-          <div id="cart-items-list" class="mb-4"></div> <!-- List barang belanja -->
-          <div class="mb-3"><label class="form-label fw-bold">Pilih Meja</label><select class="form-select form-select-lg" id="cartTableId" required></select></div>
+          <div id="cart-items-list" class="mb-4"></div> <div class="mb-3"><label class="form-label fw-bold">Pilih Meja</label><select class="form-select form-select-lg" id="cartTableId" required></select></div>
           <div class="d-flex justify-content-between p-3 bg-light rounded-3"><span class="fw-bold">Total:</span><span class="fw-bold text-success fs-4" id="cartTotalLabel">Rp 0</span></div>
         </div>
         <div class="modal-footer border-0"><button class="btn btn-warning w-100 fw-bold py-3 fs-5" id="btnSubmitOrder">Proses Pesanan</button></div>
@@ -234,7 +208,6 @@
     </div>
   </div>
 
-  <!-- MODAL: FORM TAMBAH MENU -->
   <div class="modal fade" id="addMenuModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 rounded-4 shadow">
@@ -252,7 +225,6 @@
     </div>
   </div>
 
-  <!-- MODAL: FORM EDIT MENU -->
   <div class="modal fade" id="editMenuModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 rounded-4 shadow">
@@ -271,7 +243,6 @@
     </div>
   </div>
 
-  <!-- MODAL: FORM TAMBAH MEJA -->
   <div class="modal fade" id="addTableModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 rounded-4 shadow">
@@ -283,19 +254,15 @@
     </div>
   </div>
 
-  <!-- SCRIPTS: Bootstrap Bundle (JS + Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
-  <!-- SCRIPT: UI Interactivity (Sidebar Mobile & Navigasi) -->
   <script>
     const btnToggle = document.getElementById('btnToggleSidebar');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     const navLinks = document.querySelectorAll('.sidebar .nav-link');
 
-    // Membuka sidebar di mobile
     btnToggle?.addEventListener('click', () => { sidebar.classList.add('active-mobile'); overlay.classList.add('active'); });
-    // Menutup sidebar saat klik overlay atau link
     overlay?.addEventListener('click', () => { sidebar.classList.remove('active-mobile'); overlay.classList.remove('active'); });
     navLinks.forEach(link => { 
       link.addEventListener('click', () => { 
@@ -307,10 +274,8 @@
     });
   </script>
 
-  <!-- SCRIPT: Core Logic Application (Modular) -->
   <script type="module" src="js/app.js?v=paling-sempurna"></script>
   
-  <!-- SCRIPT: Badge Sync (Sinkronisasi angka keranjang antara desktop dan mobile secara realtime) -->
   <script>
     setInterval(() => {
       const mainBadge = document.getElementById('cart-count');

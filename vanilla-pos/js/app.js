@@ -39,8 +39,8 @@ function aturNavigasi() {
 
     let idTarget = hashURL.replace('#', '');
 
-    // 🔒 BENTENG PROTEKSI HAK AKSES URL
-    if (user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables')) {
+    // 🔒 BENTENG PROTEKSI HAK AKSES URL (Halaman orders ikut dikunci untuk user)
+    if (user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables' || idTarget === 'orders')) {
       alert("Akses ditolak! Halaman ini hanya untuk Pegawai/Kasir Cafe.");
       window.location.hash = '#menu';
       return;
@@ -69,24 +69,26 @@ function aturNavigasi() {
     
     if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
     if (btnCart) btnCart.style.setProperty('display', 'block', 'important');
-    // ✅ PERBAIKAN 3: Memperbaiki typo properti display pada tombol mobile
     if (btnCartMobile) btnCartMobile.style.setProperty('display', 'block', 'important');
 
-    // 🔒 PERBAIKAN: Menyembunyikan tombol navigasi fisik di Sidebar secara Realtime
+    // 🔒 Menyembunyikan tombol navigasi fisik di Sidebar secara Realtime
     const navDashboard = document.getElementById('nav-dashboard');
     const navTables = document.getElementById('nav-tables');
+    const navOrders = document.getElementById('nav-orders');
     
     if (user.role === 'admin') {
       if (navDashboard) navDashboard.style.setProperty('display', 'block', 'important');
       if (navTables) navTables.style.setProperty('display', 'block', 'important');
+      if (navOrders) navOrders.style.setProperty('display', 'block', 'important');
     } else {
       if (navDashboard) navDashboard.style.setProperty('display', 'none', 'important');
       if (navTables) navTables.style.setProperty('display', 'none', 'important');
+      if (navOrders) navOrders.style.setProperty('display', 'none', 'important');
     }
 
     // Perbarui teks info nama pengguna di sidebar
     const userInfo = document.getElementById('user-info');
-    const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'PELANGGAN';
+    const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'KASIR';
     if (userInfo) userInfo.innerText = `Halo, ${user.username} (${labelTipe})`;
 
     // Beri indikator warna aktif (kuning) pada menu sidebar yang sedang dibuka
@@ -97,7 +99,7 @@ function aturNavigasi() {
     if (idTarget === 'dashboard' && user.role === 'admin') perbaruiStatistikDashboard();
     if (idTarget === 'menu') ambilDataMenu();
     if (idTarget === 'tables' && user.role === 'admin') ambilDataMeja();
-    if (idTarget === 'orders') ambilDataPesanan();
+    if (idTarget === 'orders' && user.role === 'admin') ambilDataPesanan(); // 🔒 Diproteksi khusus admin
 
   } catch (error) { console.error("Navigasi Error:", error); }
 }
@@ -117,7 +119,7 @@ async function perbaruiStatistikDashboard() {
   } catch (err) { console.warn("Dashboard error:", err); }
 }
 
-// === 3. MENU (Bisa Diakses Semua) ===
+// === 3. MENU ===
 async function ambilDataMenu() { 
   const data = await api.get('/menu');
   if (data) { daftarMenu = data; tampilkanKartuMenu(); }
@@ -129,7 +131,6 @@ function tampilkanKartuMenu() {
   kisiMenu.innerHTML = '';
 
   daftarMenu.forEach(item => {
-    // ✅ PERBAIKAN 1: Mengubah http://localhost:5000 menjadi BASE_URL (Vercel)
     let sumberGambar = item.image ? `${BASE_URL}${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
     
     kisiMenu.innerHTML += `
@@ -173,12 +174,6 @@ async function ambilDataPesanan() {
         kolomAksi = `<td class="text-center">
           ${p.status === 'pending' ? `<button class="btn btn-sm btn-success btn-finish-order me-1" data-id="${p.id}">Selesai</button>` : ''}
           <button class="btn btn-sm btn-outline-danger btn-delete-order" data-id="${p.id}"><i class="bi bi-trash"></i></button>
-        </td>`;
-      } else {
-        kolomAksi = `<td class="text-center">
-          ${p.status === 'pending' 
-             ? `<span class="badge bg-light text-muted border"><i class="bi bi-clock-history"></i> Diproses Dapur</span>` 
-             : `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-check2-circle"></i> Sudah Hidangkan</span>`}
         </td>`;
       }
 
@@ -226,14 +221,14 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     const user = await api.post('/login', { username, password });
     const unameStr = username.toLowerCase();
     
-    if (unameStr.includes('admin') || unameStr.includes('kasir')) {
+    if (unameStr.includes('admin')) {
         user.role = 'admin'; 
     } else {
-        user.role = 'user'; 
+        user.role = 'user'; // Otomatis menjadi role user (kasir toko)
     }
 
     localStorage.setItem('userLogin', JSON.stringify(user)); 
-    alert(`Berhasil masuk sebagai: ${user.role === 'admin' ? 'PEGAWAI CAFE' : 'PELANGGAN'}`);
+    alert(`Berhasil masuk sebagai: ${user.role === 'admin' ? 'PEGAWAI CAFE' : 'KASIR TOKO'}`);
     
     window.location.hash = (user.role === 'admin') ? '#dashboard' : '#menu';
     aturNavigasi();
@@ -319,7 +314,7 @@ document.addEventListener('click', async (e) => {
     perbaruiJumlahKeranjang(); document.getElementById('btnOpenCart').click();
   }
 
-  // --- API Operator Pegawai ---
+  // --- API Operator Pegawai (Hanya Admin) ---
   if (target.closest('.btn-edit-menu') && user?.role === 'admin') {
     const id = parseInt(target.closest('.btn-edit-menu').dataset.id);
     const menu = daftarMenu.find(m => m.id === id);
@@ -344,7 +339,6 @@ document.addEventListener('click', async (e) => {
   if (target.closest('.btn-finish-order') && user?.role === 'admin') {
     if(confirm('Tandai pesanan ini sudah selesai dibuat?')) {
       const id = target.closest('.btn-finish-order').dataset.id;
-      // ✅ PERBAIKAN 2: Mengubah http://localhost:5000 menjadi BASE_URL (Vercel)
       const res = await fetch(`${BASE_URL}/orders/${id}/finish`, { method: 'PATCH' });
       if (res.ok) { ambilDataPesanan(); ambilDataMeja(); alert('Pesanan diselesaikan!'); }
     }
@@ -362,7 +356,10 @@ document.getElementById('btnSubmitOrder')?.addEventListener('click', async () =>
   });
   keranjang = []; perbaruiJumlahKeranjang();
   bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
-  ambilDataPesanan(); ambilDataMeja(); alert('Pesanan terkirim ke kasir!');
+  if (localStorage.getItem('userLogin') && JSON.parse(localStorage.getItem('userLogin')).role === 'admin') {
+    ambilDataPesanan();
+  }
+  ambilDataMeja(); alert('Pesanan terkirim ke kasir!');
 });
 
 document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => {
