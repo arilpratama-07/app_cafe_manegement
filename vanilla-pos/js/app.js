@@ -39,7 +39,7 @@ function aturNavigasi() {
 
     let idTarget = hashURL.replace('#', '');
 
-    // 🔒 BENTENG PROTEKSI HAK AKSES URL (Halaman dashboard & tables dikunci untuk kasir, orders dibuka!)
+    // 🔒 BENTENG PROTEKSI HAK AKSES URL (Hanya dashboard & tables yang dikunci, halaman orders dibuka untuk pelanggan!)
     if (user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables')) {
       alert("Akses ditolak! Halaman ini hanya untuk Pegawai/Admin Cafe.");
       window.location.hash = '#menu';
@@ -71,7 +71,7 @@ function aturNavigasi() {
     if (btnCart) btnCart.style.setProperty('display', 'block', 'important');
     if (btnCartMobile) btnCartMobile.style.setProperty('display', 'block', 'important');
 
-    // 🔒 Kontrol Menu Navigasi Fisik di Sidebar (Menu Pesanan dibuka untuk kasir!)
+    // 🔒 Menyembunyikan tombol navigasi fisik di Sidebar secara Realtime
     const navDashboard = document.getElementById('nav-dashboard');
     const navTables = document.getElementById('nav-tables');
     const navOrders = document.getElementById('nav-orders');
@@ -83,23 +83,23 @@ function aturNavigasi() {
     } else {
       if (navDashboard) navDashboard.style.setProperty('display', 'none', 'important');
       if (navTables) navTables.style.setProperty('display', 'none', 'important');
-      if (navOrders) navOrders.style.setProperty('display', 'block', 'important'); // ✅ Kasir bisa melihat tombol pesanan
+      if (navOrders) navOrders.style.setProperty('display', 'block', 'important'); // ✅ Tombol Pesanan tampil untuk Pelanggan
     }
 
     // Perbarui teks info nama pengguna di sidebar
     const userInfo = document.getElementById('user-info');
-    const labelTipe = user.role === 'admin' ? 'ADMIN' : 'KASIR';
+    const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'PELANGGAN'; // ✅ Teks diubah jadi PELANGGAN
     if (userInfo) userInfo.innerText = `Halo, ${user.username} (${labelTipe})`;
 
     // Beri indikator warna aktif (kuning) pada menu sidebar yang sedang dibuka
     document.querySelectorAll('.nav-link').forEach(tautan => tautan.classList.remove('active'));
     document.getElementById(`nav-${idTarget}`)?.classList.add('active');
 
-    // Tarik data dari server
+    // Tarik data parsial dari server
     if (idTarget === 'dashboard' && user.role === 'admin') perbaruiStatistikDashboard();
     if (idTarget === 'menu') ambilDataMenu();
     if (idTarget === 'tables' && user.role === 'admin') ambilDataMeja();
-    if (idTarget === 'orders') ambilDataPesanan(); // ✅ Kasir & Admin sama-sama bisa menarik data pesanan
+    if (idTarget === 'orders') ambilDataPesanan(); // ✅ Diizinkan menarik data untuk semua role
 
   } catch (error) { console.error("Navigasi Error:", error); }
 }
@@ -107,7 +107,7 @@ function aturNavigasi() {
 window.addEventListener('hashchange', aturNavigasi);
 window.addEventListener('DOMContentLoaded', aturNavigasi);
 
-// === 2. DASHBOARD (Hanya Admin) ===
+// === 2. DASHBOARD (Hanya Pegawai) ===
 async function perbaruiStatistikDashboard() {
   try {
     const [dataMenu, dataMeja, dataPesanan] = await Promise.all([
@@ -171,17 +171,16 @@ async function ambilDataPesanan() {
 
       let kolomAksi = '';
       if (user && user.role === 'admin') {
-        // Admin bisa menyelesaikan & menghapus pesanan
         kolomAksi = `<td class="text-center">
           ${p.status === 'pending' ? `<button class="btn btn-sm btn-success btn-finish-order me-1" data-id="${p.id}">Selesai</button>` : ''}
           <button class="btn btn-sm btn-outline-danger btn-delete-order" data-id="${p.id}"><i class="bi bi-trash"></i></button>
         </td>`;
       } else {
-        // Kasir hanya bisa melihat status tanpa tombol eksekusi
+        // Tampilan kolom aksi ramah informasi untuk pelanggan/user biasa
         kolomAksi = `<td class="text-center">
           ${p.status === 'pending' 
-             ? `<span class="badge bg-light text-warning border border-warning border-opacity-20"><i class="bi bi-clock-history"></i> Antrean Dapur</span>` 
-             : `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-check2-circle"></i> Selesai</span>`}
+             ? `<span class="badge bg-light text-muted border"><i class="bi bi-clock-history"></i> Diproses Dapur</span>` 
+             : `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20"><i class="bi bi-check2-circle"></i> Sudah Hidangkan</span>`}
         </td>`;
       }
 
@@ -236,14 +235,14 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     }
 
     localStorage.setItem('userLogin', JSON.stringify(user)); 
-
-    // ✅ RE-FIX POPUP SESUAI REQUEST USER KASIR
+    
+    // ✅ POPUP BARU: Pesan selamat datang kustom sesuai keinginanmu
     if (user.role === 'admin') {
         alert("Berhasil masuk sebagai: PEGAWAI CAFE");
     } else {
         alert("Halo, selamat datang di Cafe Alba dan hanya bisa memesan dan melihat pesanan");
     }
-
+    
     window.location.hash = (user.role === 'admin') ? '#dashboard' : '#menu';
     aturNavigasi();
   } catch (err) { 
@@ -354,7 +353,7 @@ document.addEventListener('click', async (e) => {
     if(confirm('Tandai pesanan ini sudah selesai dibuat?')) {
       const id = target.closest('.btn-finish-order').dataset.id;
       const res = await fetch(`${BASE_URL}/orders/${id}/finish`, { method: 'PATCH' });
-      if (res.ok) { amibildataPesanan(); ambilDataMeja(); alert('Pesanan diselesaikan!'); }
+      if (res.ok) { ambilDataPesanan(); ambilDataMeja(); alert('Pesanan diselesaikan!'); }
     }
   }
 });
@@ -370,7 +369,7 @@ document.getElementById('btnSubmitOrder')?.addEventListener('click', async () =>
   });
   keranjang = []; perbaruiJumlahKeranjang();
   bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
-  ambilDataPesanan(); // ✅ Kasir otomatis me-refresh tabel pesanannya sendiri setelah sukses order
+  ambilDataPesanan(); // ✅ Refresh otomatis halaman antrean setelah pelanggan mengirim pesanan
   ambilDataMeja(); alert('Pesanan terkirim ke kasir!');
 });
 
