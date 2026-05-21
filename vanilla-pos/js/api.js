@@ -1,5 +1,4 @@
-const BASE_URL = 'https://app-cafe-manegement.vercel.app/api'; // Ganti dengan URL backend Anda
-
+const BASE_URL = 'https://app-cafe-manegement.vercel.app';
 export default {
 
   // Mengambil data dari backend
