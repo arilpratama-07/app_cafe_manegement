@@ -53,6 +53,10 @@
       .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1030; }
       .sidebar-overlay.active { display: block; }
     }
+
+    /* LOGIN: Tampilkan halaman login full-height dan center dengan rapi */
+    #login { min-height: calc(100vh - 40px); display: flex; align-items: center; justify-content: center; padding: 20px 0; }
+    #login .card { width: 100%; max-width: 420px; }
   </style>
 </head>
 <body>
@@ -72,7 +76,7 @@
       <ul class="nav flex-column mb-auto">
         <li class="nav-item admin-only"><a class="nav-link" id="nav-dashboard" href="#dashboard"><i class="bi bi-speedometer2 me-2 fs-5"></i> Dasbor</a></li>
         <li class="nav-item"><a class="nav-link" id="nav-menu" href="#menu"><i class="bi bi-grid-fill me-2 fs-5"></i> Menu</a></li>
-        <li class="nav-item"></li><a class="nav-link" id="nav-orders" href="#orders"><i class="bi bi-receipt me-2 fs-5"></i> Pesanan</a></li>
+        <li class="nav-item"><a class="nav-link" id="nav-orders" href="#orders"><i class="bi bi-receipt me-2 fs-5"></i> Pesanan</a></li>
         <li class="nav-item admin-only"><a class="nav-link" id="nav-tables" href="#tables"><i class="bi bi-layers-half me-2 fs-5"></i> Pengaturan Meja</a></li>
       </ul>
 
