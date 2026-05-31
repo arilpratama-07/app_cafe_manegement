@@ -17,6 +17,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --- 🌟 RUTE UTAMA (Mencegah Cannot GET /) ---
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: "Welcome to Cafe Management System API!",
+    status: "Server is running smoothly",
+    environment: process.env.NODE_ENV || "development"
+  });
+});
+
 // --- ROUTES ---
 app.use("/menu", require("./routes/menuRoutes"));
 app.use("/tables", require("./routes/tableRoutes"));
