@@ -1,10 +1,10 @@
 {
   "name": "cafe_management_system_backend",
   "version": "1.0.0",
-  "main": "backend/app.js", 
+  "main": "app.js",
   "scripts": {
-    "dev": "nodemon backend/app.js",
-    "start": "node backend/app.js"
+    "dev": "nodemon app.js",
+    "start": "node app.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
