@@ -39,7 +39,7 @@ function aturNavigasi() {
 
     let idTarget = hashURL.replace('#', '');
 
-    // 🔒 BENTENG PROTEKSI HAK AKSES URL (Hanya dashboard & tables yang dikunci, halaman orders dibuka untuk pelanggan!)
+    // 🔒 BENTENG PROTEKSI HAK AKSES URL
     if (user.role !== 'admin' && (idTarget === 'dashboard' || idTarget === 'tables')) {
       alert("Akses ditolak! Halaman ini hanya untuk Pegawai/Admin Cafe.");
       window.location.hash = '#menu';
@@ -83,12 +83,12 @@ function aturNavigasi() {
     } else {
       if (navDashboard) navDashboard.style.setProperty('display', 'none', 'important');
       if (navTables) navTables.style.setProperty('display', 'none', 'important');
-      if (navOrders) navOrders.style.setProperty('display', 'block', 'important'); // ✅ Tombol Pesanan tampil untuk Pelanggan
+      if (navOrders) navOrders.style.setProperty('display', 'block', 'important');
     }
 
     // Perbarui teks info nama pengguna di sidebar
     const userInfo = document.getElementById('user-info');
-    const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'PELANGGAN'; // ✅ Teks diubah jadi PELANGGAN
+    const labelTipe = user.role === 'admin' ? 'PEGAWAI' : 'PELANGGAN';
     if (userInfo) userInfo.innerText = `Halo, ${user.username} (${labelTipe})`;
 
     // Beri indikator warna aktif (kuning) pada menu sidebar yang sedang dibuka
@@ -99,7 +99,7 @@ function aturNavigasi() {
     if (idTarget === 'dashboard' && user.role === 'admin') perbaruiStatistikDashboard();
     if (idTarget === 'menu') ambilDataMenu();
     if (idTarget === 'tables' && user.role === 'admin') ambilDataMeja();
-    if (idTarget === 'orders') ambilDataPesanan(); // ✅ Diizinkan menarik data untuk semua role
+    if (idTarget === 'orders') ambilDataPesanan();
 
   } catch (error) { console.error("Navigasi Error:", error); }
 }
@@ -137,7 +137,7 @@ function tampilkanKartuMenu() {
       <div class="col-6 col-md-4 col-lg-3">
         <div class="card menu-card shadow-sm h-100 border-0 rounded-4">
           <div class="img-container position-relative d-flex align-items-center justify-content-center" style="height: 160px; background: #f8f9fa;">
-            <img src="${sumberGambar}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/150?text=Menu'">
+            <img src="${sumberGambar}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150?text=Menu'">
             <div class="position-absolute top-0 end-0 p-2 admin-only">
               <button class="btn btn-light btn-sm rounded-circle shadow-sm me-1 btn-edit-menu" data-id="${item.id}"><i class="bi bi-pencil-fill text-primary"></i></button>
               <button class="btn btn-light btn-sm rounded-circle shadow-sm btn-delete-menu" data-id="${item.id}"><i class="bi bi-trash-fill text-danger"></i></button>
@@ -176,7 +176,6 @@ async function ambilDataPesanan() {
           <button class="btn btn-sm btn-outline-danger btn-delete-order" data-id="${p.id}"><i class="bi bi-trash"></i></button>
         </td>`;
       } else {
-        // Tampilan kolom aksi ramah informasi untuk pelanggan/user biasa
         kolomAksi = `<td class="text-center">
           ${p.status === 'pending' 
              ? `<span class="badge bg-light text-muted border"><i class="bi bi-clock-history"></i> Diproses Dapur</span>` 
@@ -192,7 +191,7 @@ async function ambilDataPesanan() {
           <td style="max-width: 250px;">${detail}</td>
           <td><span class="badge ${p.status === 'pending' ? 'bg-warning text-dark' : 'bg-success'}">${p.status}</span></td>
           ${kolomAksi}
-        </tr>`;
+        </td>`;
     });
   } catch (err) { console.error(err); }
 }
@@ -236,7 +235,6 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     localStorage.setItem('userLogin', JSON.stringify(user)); 
     
-    // ✅ POPUP BARU: Pesan selamat datang kustom sesuai keinginanmu
     if (user.role === 'admin') {
         alert("Berhasil masuk sebagai: PEGAWAI CAFE");
     } else {
@@ -334,6 +332,8 @@ document.addEventListener('click', async (e) => {
     document.getElementById('editMenuId').value = menu.id;
     document.getElementById('editMenuName').value = menu.name;
     document.getElementById('editMenuPrice').value = menu.price;
+    // Set kategori jika input kodenya ada di HTML
+    if(document.getElementById('editMenuCategory')) document.getElementById('editMenuCategory').value = menu.category;
     new bootstrap.Modal(document.getElementById('editMenuModal')).show();
   }
 
@@ -369,35 +369,61 @@ document.getElementById('btnSubmitOrder')?.addEventListener('click', async () =>
   });
   keranjang = []; perbaruiJumlahKeranjang();
   bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
-  ambilDataPesanan(); // ✅ Refresh otomatis halaman antrean setelah pelanggan mengirim pesanan
+  ambilDataPesanan(); 
   ambilDataMeja(); alert('Pesanan terkirim ke kasir!');
 });
 
+// Fix Tambah Menu: Menggunakan JSON Object murni & Mengonversi harga ke Number
 document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const fd = new FormData();
-  fd.append('name', document.getElementById('menuName').value);
-  fd.append('category', document.getElementById('menuCategory').value);
-  fd.append('price', document.getElementById('menuPrice').value);
-  if (document.getElementById('menuImage').files[0]) fd.append('image', document.getElementById('menuImage').files[0]);
-  await api.post('/menu', fd);
-  ambilDataMenu(); e.target.reset();
-  bootstrap.Modal.getInstance(document.getElementById('addMenuModal')).hide();
+  
+  const dataMenu = {
+    name: document.getElementById('menuName').value,
+    category: document.getElementById('menuCategory').value,
+    price: Number(document.getElementById('menuPrice').value),
+    image: "/uploads/default-menu.png" // Fallback jika tidak memakai file upload multipart
+  };
+
+  try {
+    await api.post('/menu', dataMenu);
+    ambilDataMenu(); 
+    e.target.reset();
+    
+    const modalEl = document.getElementById('addMenuModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+    
+    alert('Menu baru berhasil ditambahkan!');
+  } catch (err) {
+    console.error("Gagal menambah menu:", err);
+    alert("Gagal menambahkan menu. Periksa log server.");
+  }
 });
 
+// Fix Edit Menu: Menggunakan JSON Object murni & Mengonversi harga ke Number
 document.getElementById('editMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = document.getElementById('editMenuId').value;
-  const fd = new FormData();
-  fd.append('name', document.getElementById('editMenuName').value);
-  fd.append('category', document.getElementById('editMenuCategory').value);
-  fd.append('price', document.getElementById('editMenuPrice').value);
-  const fileInput = document.getElementById('editMenuImage');
-  if (fileInput.files[0]) fd.append('image', fileInput.files[0]);
+  
+  const dataEditMenu = {
+    name: document.getElementById('editMenuName').value,
+    category: document.getElementById('editMenuCategory')?.value || 'Makanan',
+    price: Number(document.getElementById('editMenuPrice').value)
+  };
+
   try {
-    await api.put(`/menu/${id}`, fd); ambilDataMenu();
-    bootstrap.Modal.getInstance(document.getElementById('editMenuModal')).hide(); alert('Menu diperbarui!');
-  } catch (err) { console.error(err); }
+    await api.put(`/menu/${id}`, dataEditMenu); 
+    ambilDataMenu();
+    
+    const modalEl = document.getElementById('editMenuModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+    
+    alert('Menu berhasil diperbarui!');
+  } catch (err) { 
+    console.error("Gagal update menu:", err); 
+    alert("Gagal memperbarui menu.");
+  }
 });
 
 document.getElementById('addTableForm')?.addEventListener('submit', async (e) => {
