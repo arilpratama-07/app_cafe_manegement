@@ -125,16 +125,17 @@ async function ambilDataMenu() {
   if (data) { daftarMenu = data; tampilkanKartuMenu(); }
 }
 
-// PERBAIKAN FINAL: Sistem deteksi gambar rusak & dialihkan otomatis ke Unsplash
+// MENAMPILKAN KARTU MENU: Mengatur path gambar dari server upload atau fallback Unsplash
 function tampilkanKartuMenu() {
   const kisiMenu = document.getElementById('menu-grid');
   if (!kisiMenu) return;
   kisiMenu.innerHTML = '';
 
   daftarMenu.forEach(item => {
-    // Gunakan gambar default makanan dari Unsplash jika menu tidak punya gambar atau berisi string default yang rusak
+    // Jalur gambar default jika database kosong
     let sumberGambar = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=60';
 
+    // Cek jika gambar ada, dan bukan text string default lama
     if (item.image && !item.image.includes('default-menu.png') && item.image.trim() !== '') {
       sumberGambar = item.image.startsWith('http') 
         ? item.image 
@@ -333,7 +334,7 @@ document.addEventListener('click', async (e) => {
     perbaruiJumlahKeranjang(); document.getElementById('btnOpenCart').click();
   }
 
-  // --- API Operator Pegawai (Hanya Admin) ---
+  // --- EDIT MENU (Klik Tombol Pencil) ---
   if (target.closest('.btn-edit-menu') && user?.role === 'admin') {
     const id = parseInt(target.closest('.btn-edit-menu').dataset.id);
     const menu = daftarMenu.find(m => m.id === id);
@@ -365,7 +366,7 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-// Tombol Kirim Pesanan
+// Tombol Kirim Pesanan Keranjang
 document.getElementById('btnSubmitOrder')?.addEventListener('click', async () => {
   const tableId = document.getElementById('cartTableId').value;
   if (!tableId || keranjang.length === 0) return alert('Pilih meja dan menu!');
@@ -380,19 +381,23 @@ document.getElementById('btnSubmitOrder')?.addEventListener('click', async () =>
   ambilDataMeja(); alert('Pesanan terkirim ke kasir!');
 });
 
-// Perbaikan Tambah Menu: Menggunakan Objek JSON Murni & Mengonversi Harga ke Tipe Angka (Number)
+// AKTIF KEMBALI: Form Tambah Menu menggunakan FormData agar bisa baca file gambar dari Explorer
 document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const dataMenu = {
-    name: document.getElementById('menuName').value,
-    category: document.getElementById('menuCategory').value,
-    price: Number(document.getElementById('menuPrice').value),
-    image: "" // Sengaja dikosongkan agar otomatis ditangani sistem fallback Unsplash di atas
-  };
+  const fd = new FormData();
+  fd.append('name', document.getElementById('menuName').value);
+  fd.append('category', document.getElementById('menuCategory').value);
+  fd.append('price', document.getElementById('menuPrice').value);
+  
+  // Ambil file gambar mentah dari input type="file" di modal
+  const fileInput = document.getElementById('menuImage');
+  if (fileInput && fileInput.files[0]) {
+    fd.append('image', fileInput.files[0]);
+  }
 
   try {
-    await api.post('/menu', dataMenu);
+    await api.post('/menu', fd); // api.js sekarang sudah bisa mendeteksi objek FormData otomatis
     ambilDataMenu(); 
     e.target.reset();
     
@@ -400,33 +405,37 @@ document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => 
     const modalInstance = bootstrap.Modal.getInstance(modalEl);
     if (modalInstance) modalInstance.hide();
     
-    alert('Menu baru berhasil ditambahkan!');
+    alert('Menu baru berhasil ditambahkan beserta gambar!');
   } catch (err) {
     console.error("Gagal menambah menu:", err);
-    alert("Gagal menambahkan menu. Periksa log server.");
+    alert("Gagal menambahkan menu. Pastikan Route Backend kamu mendukung Upload Multipart.");
   }
 });
 
-// Perbaikan Edit Menu: Menggunakan Objek JSON Murni & Mengonversi Harga ke Tipe Angka (Number)
+// AKTIF KEMBALI: Form Edit Menu menggunakan FormData untuk mendukung pengubahan file gambar
 document.getElementById('editMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = document.getElementById('editMenuId').value;
   
-  const dataEditMenu = {
-    name: document.getElementById('editMenuName').value,
-    category: document.getElementById('editMenuCategory')?.value || 'Makanan',
-    price: Number(document.getElementById('editMenuPrice').value)
-  };
+  const fd = new FormData();
+  fd.append('name', document.getElementById('editMenuName').value);
+  fd.append('category', document.getElementById('editMenuCategory')?.value || 'Makanan');
+  fd.append('price', document.getElementById('editMenuPrice').value);
+  
+  const fileInput = document.getElementById('editMenuImage');
+  if (fileInput && fileInput.files[0]) {
+    fd.append('image', fileInput.files[0]);
+  }
 
   try {
-    await api.put(`/menu/${id}`, dataEditMenu); 
+    await api.put(`/menu/${id}`, fd); 
     ambilDataMenu();
     
     const modalEl = document.getElementById('editMenuModal');
     const modalInstance = bootstrap.Modal.getInstance(modalEl);
     if (modalInstance) modalInstance.hide();
     
-    alert('Menu berhasil diperbarui!');
+    alert('Menu berhasil diperbarui beserta gambarnya!');
   } catch (err) { 
     console.error("Gagal update menu:", err); 
     alert("Gagal memperbarui menu.");
