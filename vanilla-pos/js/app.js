@@ -125,19 +125,27 @@ async function ambilDataMenu() {
   if (data) { daftarMenu = data; tampilkanKartuMenu(); }
 }
 
+// PERBAIKAN FINAL: Sistem deteksi gambar rusak & dialihkan otomatis ke Unsplash
 function tampilkanKartuMenu() {
   const kisiMenu = document.getElementById('menu-grid');
   if (!kisiMenu) return;
   kisiMenu.innerHTML = '';
 
   daftarMenu.forEach(item => {
-    let sumberGambar = item.image ? `${BASE_URL}${item.image.startsWith('/') ? item.image : '/' + item.image}` : '';
+    // Gunakan gambar default makanan dari Unsplash jika menu tidak punya gambar atau berisi string default yang rusak
+    let sumberGambar = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=60';
+
+    if (item.image && !item.image.includes('default-menu.png') && item.image.trim() !== '') {
+      sumberGambar = item.image.startsWith('http') 
+        ? item.image 
+        : `${BASE_URL}${item.image.startsWith('/') ? item.image : '/' + item.image}`;
+    }
     
     kisiMenu.innerHTML += `
       <div class="col-6 col-md-4 col-lg-3">
         <div class="card menu-card shadow-sm h-100 border-0 rounded-4">
-          <div class="img-container position-relative d-flex align-items-center justify-content-center" style="height: 160px; background: #f8f9fa;">
-            <img src="${sumberGambar}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src='https://via.placeholder.com/150?text=Menu'">
+          <div class="img-container position-relative d-flex align-items-center justify-content-center" style="height: 160px; background: #f8f9fa; overflow: hidden; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+            <img src="${sumberGambar}" style="width:100%; height:100%; object-fit:cover;" alt="${item.name}">
             <div class="position-absolute top-0 end-0 p-2 admin-only">
               <button class="btn btn-light btn-sm rounded-circle shadow-sm me-1 btn-edit-menu" data-id="${item.id}"><i class="bi bi-pencil-fill text-primary"></i></button>
               <button class="btn btn-light btn-sm rounded-circle shadow-sm btn-delete-menu" data-id="${item.id}"><i class="bi bi-trash-fill text-danger"></i></button>
@@ -257,7 +265,7 @@ document.getElementById('btnLogout')?.addEventListener('click', () => {
   }
 });
 
-// === 8. KERANJANG & SUBMIT ===
+// === 8. KERANJANG & SUBMIT PESANAN ===
 function perbaruiJumlahKeranjang() {
   const total = keranjang.reduce((acc, curr) => acc + curr.quantity, 0);
   const badge = document.getElementById('cart-count');
@@ -332,7 +340,6 @@ document.addEventListener('click', async (e) => {
     document.getElementById('editMenuId').value = menu.id;
     document.getElementById('editMenuName').value = menu.name;
     document.getElementById('editMenuPrice').value = menu.price;
-    // Set kategori jika input kodenya ada di HTML
     if(document.getElementById('editMenuCategory')) document.getElementById('editMenuCategory').value = menu.category;
     new bootstrap.Modal(document.getElementById('editMenuModal')).show();
   }
@@ -358,7 +365,7 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-// Submit Forms
+// Tombol Kirim Pesanan
 document.getElementById('btnSubmitOrder')?.addEventListener('click', async () => {
   const tableId = document.getElementById('cartTableId').value;
   if (!tableId || keranjang.length === 0) return alert('Pilih meja dan menu!');
@@ -373,7 +380,7 @@ document.getElementById('btnSubmitOrder')?.addEventListener('click', async () =>
   ambilDataMeja(); alert('Pesanan terkirim ke kasir!');
 });
 
-// Fix Tambah Menu: Menggunakan JSON Object murni & Mengonversi harga ke Number
+// Perbaikan Tambah Menu: Menggunakan Objek JSON Murni & Mengonversi Harga ke Tipe Angka (Number)
 document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   
@@ -381,7 +388,7 @@ document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => 
     name: document.getElementById('menuName').value,
     category: document.getElementById('menuCategory').value,
     price: Number(document.getElementById('menuPrice').value),
-    image: "/uploads/default-menu.png" // Fallback jika tidak memakai file upload multipart
+    image: "" // Sengaja dikosongkan agar otomatis ditangani sistem fallback Unsplash di atas
   };
 
   try {
@@ -400,7 +407,7 @@ document.getElementById('addMenuForm')?.addEventListener('submit', async (e) => 
   }
 });
 
-// Fix Edit Menu: Menggunakan JSON Object murni & Mengonversi harga ke Number
+// Perbaikan Edit Menu: Menggunakan Objek JSON Murni & Mengonversi Harga ke Tipe Angka (Number)
 document.getElementById('editMenuForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = document.getElementById('editMenuId').value;
