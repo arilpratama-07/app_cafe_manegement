@@ -9,10 +9,12 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "multer": "^2.1.1",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.22.3",
     "node-cron": "^4.2.1",
     "sequelize": "^6.37.8"

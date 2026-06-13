@@ -21,9 +21,10 @@ exports.create = async (req, res) => {
     }
 
     let imagePath = null;
-    // Jika ada file gambar yang diupload, simpan lokasinya
+    // Jika ada file gambar yang diupload via Cloudinary, simpan URL-nya
     if (req.file) {
-      imagePath = '/uploads/' + req.file.filename;
+      // CloudinaryStorage otomatis mengisi req.file.path dengan URL Cloudinary
+      imagePath = req.file.path || req.file.secure_url || null;
     }
 
     // Masukkan data ke database
@@ -57,8 +58,8 @@ exports.update = async (req, res) => {
 
     if (!menu) return res.status(404).json({ message: "Menu tidak ditemukan" });
 
-    // Logika gambar: jika ada file baru pakai yang baru, jika tidak pakai yang lama
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : menu.image;
+    // Logika gambar: jika ada file baru pakai URL Cloudinary baru, jika tidak pakai yang lama
+    const imagePath = req.file ? (req.file.path || req.file.secure_url) : menu.image;
 
     // Proses update data ke database
     await menu.update({

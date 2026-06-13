@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Catatan: /uploads tidak lagi digunakan karena gambar disimpan di Cloudinary
 
 // --- 🌟 RUTE UTAMA (Mencegah Cannot GET /) ---
 app.get('/', (req, res) => {

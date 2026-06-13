@@ -135,11 +135,11 @@ function tampilkanKartuMenu() {
     // Jalur gambar default jika database kosong
     let sumberGambar = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=60';
 
-    // Cek jika gambar ada, dan bukan text string default lama
-    if (item.image && !item.image.includes('default-menu.png') && item.image.trim() !== '') {
+    // Cek jika gambar ada (bisa URL Cloudinary penuh, atau path lama)
+    if (item.image && item.image.trim() !== '' && !item.image.includes('default-menu.png')) {
       sumberGambar = item.image.startsWith('http') 
-        ? item.image 
-        : `${BASE_URL}${item.image.startsWith('/') ? item.image : '/' + item.image}`;
+        ? item.image  // URL Cloudinary langsung dipakai
+        : `${BASE_URL}${item.image.startsWith('/') ? item.image : '/' + item.image}`; // Fallback path lama
     }
     
     kisiMenu.innerHTML += `
