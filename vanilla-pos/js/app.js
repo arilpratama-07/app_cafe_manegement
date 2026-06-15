@@ -447,4 +447,4 @@ document.getElementById('addTableForm')?.addEventListener('submit', async (e) =>
   await api.post('/tables', { table_number: document.getElementById('tableNumber').value });
   ambilDataMeja(); e.target.reset();
   bootstrap.Modal.getInstance(document.getElementById('addTableModal')).hide();
-});
+}); 
